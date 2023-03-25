@@ -138,39 +138,39 @@ contract PlatonicRebornV2 {
     function inital_array() private {
         // num2solid[1].name = "Cube";
         defaultSetting.observer = [
-            ABDKMath64x64.fromInt(1),
-            ABDKMath64x64.fromInt(2),
+            ABDKMath64x64.fromInt(4),
+            ABDKMath64x64.fromInt(4),
             ABDKMath64x64.fromInt(0)
         ];
 
         ////
         defaultSetting.wire_color = 16737945;
-        defaultSetting.face_or_wire = false;
-        defaultSetting.opacity = "50";
+        defaultSetting.face_or_wire = true;
+        defaultSetting.opacity = "80";
         defaultSetting.rotating_mode = true;
         defaultSetting.angular_speed_deg = 0;
         defaultSetting.dist_v_normalize = true;
         defaultSetting.color_list = [
-            1637945,
-            1677945,
-            1637945,
-            16737945,
-            16737945,
-            16737845,
-            16737945,
-            1673745,
-            16737945,
-            16737245,
-            1673795,
-            16733945,
-            12737945,
-            1673945,
-            16737945,
-            15737945,
-            1737945,
-            16737945,
-            16737945,
-            1673745
+            16761600,
+            15158332,
+            3447003,
+            3066993,
+            10181046,
+            15844367,
+            2600544,
+            2719929,
+            9323693,
+            15965202,
+            12597547,
+            1752220,
+            3426654,
+            8359053,
+            1482885,
+            13849600,
+            12436423,
+            2899536,
+            15787660,
+            16101441
         ];
     }
 
@@ -566,7 +566,7 @@ contract PlatonicRebornV2 {
             for (uint256 j; j < polygon0; j++)
                 mx = norm(
                     line_vector(
-                        vertices0[face_list0[i * 3 + j]],
+                        vertices0[face_list0[i * polygon0 + j]],
                         relative_observer0
                     )
                 );
@@ -593,7 +593,8 @@ contract PlatonicRebornV2 {
     ) public view returns (string memory) {
         string memory a = "";
         uint8[] memory face_list0 = pls0.face_list;
-        uint256 face_list_length0 = face_list0.length / pls0.polygon;
+        uint8 _polygon = pls0.polygon;
+        uint256 face_list_length0 = face_list0.length / _polygon;
         uint24 color;
         uint24[] memory color_list0 = pls0.color_list;
         uint64[] memory pix0 = pls0.pix;
@@ -611,8 +612,8 @@ contract PlatonicRebornV2 {
             color = color_list0[sorted_index0[i]];
             t = sorted_index0[i];
 
-            for (uint256 j; j < pls0.polygon; j++) {
-                t2 = face_list0[t * 3 + j] * 2;
+            for (uint256 j; j < _polygon; j++) {
+                t2 = face_list0[t * _polygon + j] * 2;
                 x0 = pix0[t2];
                 // x0 = 0;
                 x1 = pix0[t2 + 1];

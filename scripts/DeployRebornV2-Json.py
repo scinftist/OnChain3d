@@ -13,7 +13,8 @@ def deploy_and_create(mint_req=True):
         #     q = f.read()
         y = json.load(ss)
 
-    for i in range(5):
+    for k in range(5):
+        i = k
         # demo.solidStruct_IMU(
         #     0,
         #     _name,
@@ -32,7 +33,13 @@ def deploy_and_create(mint_req=True):
             y[str(i)]["face_polygon"],
             {"from": account},
         )
-        sleep(2)
+        sleep(4)
+        with open("./" + str(i) + ".txt", "w") as n:
+            #     q = f.read()
+            t = demo.tok(i)
+            sleep(5)
+            n.write(t)
+
     sleep(5)
     print(demo.tok(0))
     sleep(5)
