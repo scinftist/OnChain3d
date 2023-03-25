@@ -34,12 +34,12 @@ contract PlatonicRebornV2 {
     string tailp = "</svg>";
     ////
     string headl = '<svg height="400" width="400">';
-    string l1 = "<line x1=";
-    string l2 = " y1=";
-    string l3 = " x2=";
-    string l4 = " y2=";
-    string l5 = ' style="stroke:rgb(';
-    string l6 = ');stroke-width:2"/>';
+    string l1 = '<line x1="';
+    string l2 = '" y1="';
+    string l3 = '" x2="';
+    string l4 = '" y2="';
+    string l5 = '" stroke="#';
+    string l6 = '" stroke-width="2"/>';
     string taill = "</svg>";
 
     /// / aspect ratio + distance aware vs normalize
@@ -145,7 +145,7 @@ contract PlatonicRebornV2 {
 
         ////
         defaultSetting.wire_color = 16737945;
-        defaultSetting.face_or_wire = true;
+        defaultSetting.face_or_wire = false;
         defaultSetting.opacity = "80";
         defaultSetting.rotating_mode = true;
         defaultSetting.angular_speed_deg = 0;

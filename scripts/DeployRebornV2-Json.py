@@ -36,7 +36,7 @@ def deploy_and_create(mint_req=True):
         sleep(4)
         with open("./" + str(i) + ".txt", "w") as n:
             #     q = f.read()
-            t = demo.tok(i)
+            t = demo.tokenURI(i)
             sleep(5)
             n.write(t)
 
