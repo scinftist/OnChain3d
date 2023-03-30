@@ -37,15 +37,15 @@ def deploy_and_create(mint_req=True):
         with open("./" + str(i) + ".txt", "w") as n:
             #     q = f.read()
             # t = demo.tokenURI(i)
-            t = demo.tok(i)
+            t = demo.renderTokenById(i)
             sleep(3)
             n.write(t)
 
     id = 3
     o = [4 * 2 ** 64, 4 * 2 ** 64, -8 * (2 ** 64)]
-    op = 95
-    rm = False
-    asd = 0
+    op = 100
+    rm = True
+    asd = 1
     dvn = False
     fow = True
     wc = 15158332
@@ -92,8 +92,9 @@ def deploy_and_create(mint_req=True):
     # sleep(2)
     # demo.setSetting(id, o, op, rm, asd, dvn, fow, wc, cl, {"from": account})
     for i in range(20):
-        o = [2 * 2 ** 64, 2 * 2 ** 64, -i * (2 ** 63)]
-        t = demo.tok(3)
+        x = (4 * 2 ** 64) - (i * (2 ** 62))
+        o = [x, 2 * 2 ** 64, -i * (2 ** 63)]
+        t = demo.renderTokenById(3)
         sleep(3)
         with open("./svgs/" + "0" + ".html", "w") as n:
             #     q = f.read()

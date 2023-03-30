@@ -190,6 +190,11 @@ contract PlatonicRebornV2 {
         uint24[] calldata _color_list
     ) public {
         require(_color_list.length < 21);
+        require(_opacity < 100, "opacity should be less than 100");
+        int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
+        int128 tempNorm = norm(tempObserver);
+        require(tempNorm > 55340232221128654848, "too close");
+
         generalSettings[id] = GeneralSetting({
             observer: _observer,
             opacity: _opacity,
@@ -791,9 +796,114 @@ contract PlatonicRebornV2 {
     //     }
     //     // return new_svg_wf(pix0);
     // }
+    function previewTokenById(uint256 tid) public view returns (string memory) {
+        solid memory _solid = num2solid[tid % 5];
+
+        GeneralSetting memory _generalSetting = generalSettings[tid];
+        if (
+            _generalSetting.observer[0] == 0 && _generalSetting.observer[1] == 0
+        ) {
+            _generalSetting = defaultSetting;
+        }
+
+        wire_struct memory wrs;
+        poly_struct memory pls;
+        pix_struct memory pxs;
+        // preview case + header
+        deepstruct memory _deepstruct;
+
+        // _solid = update_struct(_bytes, tid);
+        // return (_solid.observer[0]);
+        //end of preview maniulation
+        int128[3] memory _observer = _generalSetting.observer;
+        _deepstruct._center = center(_solid.vertices);
+
+        _observer = relative_observer(
+            _observer,
+            _deepstruct._center,
+            _generalSetting.angular_speed_deg
+        );
+        _deepstruct._plane_normal = plane_normal_vector(
+            _observer,
+            _deepstruct._center
+        );
+        _deepstruct._plane_vs_observer = plane_vs_observer(
+            _observer,
+            _deepstruct._plane_normal
+        );
+
+        _deepstruct._z_prime = z_prime(_deepstruct._plane_normal);
+        _deepstruct._x_prime = x_prime(
+            _deepstruct._plane_normal,
+            _deepstruct._z_prime
+        );
+
+        _deepstruct._projected_points_in_3d = new_projected_points_in_3d(
+            _observer,
+            _deepstruct._plane_normal,
+            _solid.vertices
+        );
+
+        _deepstruct._projected_points_in_2d = new_projected_points_in_2d(
+            _deepstruct._projected_points_in_3d,
+            _deepstruct._z_prime,
+            _deepstruct._x_prime,
+            _deepstruct._plane_vs_observer
+        );
+        pxs.points_2d = _deepstruct._projected_points_in_2d;
+        pxs._observer = _generalSetting.observer;
+        pxs._dist_v_normalize = _generalSetting.dist_v_normalize;
+
+        // new removal
+        // pxs._aspect_ratio_mode = _solid.aspect_ratio_mode;
+        // pxs._custome_h = _solid.custome_h;
+        // pxs._custome_w = _solid.custome_w;
+        // return "zart";
+        _deepstruct.pix0 = new_scaled_newpoints(pxs);
+        // return "zart";
+        // new removal
+        // (_deepstruct.whead, _deepstruct.hhead) = h_w_detection(
+        //     _solid.aspect_ratio_mode,
+        //     _solid.custome_h,
+        //     _solid.custome_w
+        // );
+
+        if (_generalSetting.face_or_wire) {
+            _deepstruct._face_index = face_index(
+                _observer,
+                _solid.vertices,
+                _solid.face_list,
+                _solid.face_polygon
+            );
+
+            pls.pix = _deepstruct.pix0;
+            pls.face_list = _solid.face_list;
+            pls.color_list = _generalSetting.color_list;
+            pls.sorted_index = _deepstruct._face_index;
+            pls.opacity = _generalSetting.opacity;
+            pls.polygon = _solid.face_polygon;
+            // return "zart0";
+            // new removal
+            // pls.headstring = head_func(_deepstruct.hhead, _deepstruct.whead);
+            pls.headstring = head_func(0, 0);
+            return new_svg_poly(pls);
+            // return "zart";
+        } else {
+            wrs.pix = _deepstruct.pix0;
+            wrs.adj = _solid.adjacency_matrix;
+            wrs.wire_color = _generalSetting.wire_color;
+            //new add
+            wrs.lenVertices = _solid.vertices.length;
+            //new removal
+            // wrs.headstring = head_func(_deepstruct.hhead, _deepstruct.whead);
+            wrs.headstring = head_func(0, 0);
+            return new_svg_wf(wrs);
+        }
+        // return new_svg_wf(pix0);
+    }
 
     //safe cast?
-    function tokenURI(uint256 _tokenId) public view returns (string memory) {
+    function tokenURI(uint256 tokenId) public view returns (string memory) {
         return
             string(
                 abi.encodePacked(
@@ -802,7 +912,7 @@ contract PlatonicRebornV2 {
                         bytes(
                             abi.encodePacked(
                                 '"image": "data:image/svg+xml;base64,',
-                                Base64.encode(bytes(tok(uint8(_tokenId)))),
+                                Base64.encode(bytes(renderTokenById(tokenId))),
                                 '"'
                             )
                         )
@@ -811,7 +921,7 @@ contract PlatonicRebornV2 {
             );
     }
 
-    function tok(uint8 tid) public view returns (string memory) {
+    function renderTokenById(uint256 tid) public view returns (string memory) {
         solid memory _solid = num2solid[tid];
 
         GeneralSetting memory _generalSetting = generalSettings[tid];
