@@ -74,7 +74,7 @@ contract PlatonicRebornV2 {
         uint256[] sorted_index;
         uint8[] face_list;
         uint24[] color_list;
-        string opacity;
+        uint8 opacity;
         uint8 polygon;
         // uint8 aspect_ratio_mode;
         // uint16[2] custome_w_h;
@@ -103,7 +103,7 @@ contract PlatonicRebornV2 {
     }
     struct GeneralSetting {
         int128[3] observer;
-        string opacity;
+        uint8 opacity;
         bool rotating_mode;
         uint16 angular_speed_deg;
         bool dist_v_normalize;
@@ -113,8 +113,8 @@ contract PlatonicRebornV2 {
     }
     //uint8?//number of faces ?
     GeneralSetting private defaultSetting;
-    mapping(uint8 => solid) num2solid;
-    mapping(uint8 => GeneralSetting) generalSettings;
+    mapping(uint256 => solid) num2solid;
+    mapping(uint256 => GeneralSetting) generalSettings;
 
     //num2solid[n].name = 'tetrahydra
     ///covert to 64x64 before deploy
@@ -140,16 +140,16 @@ contract PlatonicRebornV2 {
         defaultSetting.observer = [
             ABDKMath64x64.fromInt(4),
             ABDKMath64x64.fromInt(4),
-            ABDKMath64x64.fromInt(0)
+            ABDKMath64x64.fromInt(-8)
         ];
 
         ////
         defaultSetting.wire_color = 16737945;
-        defaultSetting.face_or_wire = false;
-        defaultSetting.opacity = "80";
-        defaultSetting.rotating_mode = true;
+        defaultSetting.face_or_wire = true;
+        defaultSetting.opacity = 80;
+        defaultSetting.rotating_mode = false;
         defaultSetting.angular_speed_deg = 0;
-        defaultSetting.dist_v_normalize = true;
+        defaultSetting.dist_v_normalize = false;
         defaultSetting.color_list = [
             16761600,
             15158332,
@@ -176,6 +176,30 @@ contract PlatonicRebornV2 {
 
     constructor() {
         inital_array();
+    }
+
+    function setSetting(
+        uint256 id,
+        int128[3] calldata _observer,
+        uint8 _opacity,
+        bool _rotating_mode,
+        uint8 _angular_speed_deg,
+        bool _dist_v_normalize,
+        bool _face_or_wire,
+        uint24 _wire_color,
+        uint24[] calldata _color_list
+    ) public {
+        require(_color_list.length < 21);
+        generalSettings[id] = GeneralSetting({
+            observer: _observer,
+            opacity: _opacity,
+            rotating_mode: _rotating_mode,
+            angular_speed_deg: _angular_speed_deg,
+            dist_v_normalize: _dist_v_normalize,
+            face_or_wire: _face_or_wire,
+            wire_color: _wire_color,
+            color_list: _color_list
+        });
     }
 
     function cross(
@@ -431,7 +455,11 @@ contract PlatonicRebornV2 {
                 norm(_pxs._observer)
             );
         } else {
-            scale_factor = ABDKMath64x64.fromUInt(_t);
+            // scale_factor = ABDKMath64x64.fromUInt(_t);
+            scale_factor = ABDKMath64x64.div(
+                ABDKMath64x64.fromUInt(_t),
+                ABDKMath64x64.fromUInt(2)
+            );
         }
         // max(mx0 ,mx1) mx
         for (uint256 i; i < (points_2d.length / 2); i++) {
@@ -563,14 +591,15 @@ contract PlatonicRebornV2 {
         //         );
         // }
         for (uint256 i; i < face_list_length0; i++) {
-            for (uint256 j; j < polygon0; j++)
+            for (uint256 j; j < polygon0; j++) {
                 mx = norm(
                     line_vector(
                         vertices0[face_list0[i * polygon0 + j]],
                         relative_observer0
                     )
                 );
-            df[i] = ABDKMath64x64.add(df[i], mx);
+                df[i] = ABDKMath64x64.add(df[i], mx);
+            }
         }
         mx = 0;
         for (uint256 i; i < face_list_length0; i++) {
@@ -598,6 +627,7 @@ contract PlatonicRebornV2 {
         uint24 color;
         uint24[] memory color_list0 = pls0.color_list;
         uint64[] memory pix0 = pls0.pix;
+        string memory opacityStr = uint2str(pls0.opacity);
         // string memory opacitystr0 = opacitystr(pls0.opacity);
         uint256[] memory sorted_index0 = pls0.sorted_index;
         uint256 t = 0;
@@ -641,7 +671,7 @@ contract PlatonicRebornV2 {
             //         p3
             //     )
             // );
-            a = string(abi.encodePacked(a, pls0.opacity, p4));
+            a = string(abi.encodePacked(a, opacityStr, p4));
         }
         a = string(abi.encodePacked(a, tailp));
         return a;
@@ -791,17 +821,6 @@ contract PlatonicRebornV2 {
             _generalSetting = defaultSetting;
         }
 
-        // int128[3] memory _center;
-        // int128[3] memory _observer = num2solid[tid].observer;
-        // // uint8[][] memory _face_list = num2solid[tid].face_list;
-        // // bool _face_or_wire = num2solid[tid].face_or_wire;
-        // // uint8[3][] memory _color_list = num2solid[tid].color_list;
-        // uint256[] memory _face_index;
-        // int128[] memory _projected_points_in_3d;
-        // int128[3] memory _z_prime;
-        // int128[3] memory _x_prime;
-        // int128[] memory _projected_points_in_2d;
-        // uint64[] memory pix0;
         wire_struct memory wrs;
         poly_struct memory pls;
         pix_struct memory pxs;
@@ -854,7 +873,7 @@ contract PlatonicRebornV2 {
         // pxs._aspect_ratio_mode = _solid.aspect_ratio_mode;
         // pxs._custome_h = _solid.custome_h;
         // pxs._custome_w = _solid.custome_w;
-
+        // return "zart";
         _deepstruct.pix0 = new_scaled_newpoints(pxs);
         // return "zart";
         // new removal

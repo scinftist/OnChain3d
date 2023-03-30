@@ -13,8 +13,8 @@ def deploy_and_create(mint_req=True):
         #     q = f.read()
         y = json.load(ss)
 
-    for k in range(5):
-        i = k
+    for k in range(1):
+        i = 3
         # demo.solidStruct_IMU(
         #     0,
         #     _name,
