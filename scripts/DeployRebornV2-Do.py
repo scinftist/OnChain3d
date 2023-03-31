@@ -101,7 +101,8 @@ def deploy_and_create(mint_req=True):
             # sleep(1)
             n.write(a + t + b)
             n.close()
-        demo.setSetting(id, o, op, rm, asd, dvn, fow, wc, cl, {"from": account})
+        print(len(cl[0:12]))
+        demo.setSetting(id, o, op, rm, asd, dvn, fow, wc, cl[0:12], {"from": account})
 
     # print(demo.tok(0))
     sleep(5)

@@ -115,6 +115,8 @@ contract PlatonicRebornV2 {
     GeneralSetting private defaultSetting;
     mapping(uint256 => solid) num2solid;
     mapping(uint256 => GeneralSetting) generalSettings;
+    //
+    uint256[5] private number_of_faces = [4, 6, 8, 12, 20];
 
     //num2solid[n].name = 'tetrahydra
     ///covert to 64x64 before deploy
@@ -189,7 +191,10 @@ contract PlatonicRebornV2 {
         uint24 _wire_color,
         uint24[] calldata _color_list
     ) public {
-        require(_color_list.length < 21);
+        require(
+            _color_list.length <= number_of_faces[id % 5],
+            "wrong number of colors"
+        );
         require(_opacity < 100, "opacity should be less than 100");
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
@@ -205,6 +210,12 @@ contract PlatonicRebornV2 {
             wire_color: _wire_color,
             color_list: _color_list
         });
+    }
+
+    function getSetting(
+        uint256 id
+    ) public view returns (GeneralSetting memory) {
+        return generalSettings[id];
     }
 
     function cross(
@@ -655,156 +666,78 @@ contract PlatonicRebornV2 {
                 // x1 = 0; what????
                 a = string(abi.encodePacked(a, uint2str(x0), ","));
                 a = string(abi.encodePacked(a, uint2str(x1), " "));
-
-                // a = string(
-                //     abi.encodePacked(
-                //         a,
-                //         uint2str(pix0[j * 2 + 0]),
-                //         l4,
-                //         uint2str(pix0[j * 2 + 1]),
-                //         l5
-                //     )
-                // );
             }
             a = string(abi.encodePacked(a, p2, toHexString(color, 3), p3));
-            // a = string(
-            //     abi.encodePacked(
-            //         a,
-            //         uint2str(color[1]),
-            //         ",",
-            //         uint2str(color[2]),
-            //         p3
-            //     )
-            // );
+
             a = string(abi.encodePacked(a, opacityStr, p4));
         }
         a = string(abi.encodePacked(a, tailp));
         return a;
     }
 
-    // function opacitystr(uint8 opacity) public view returns (string memory) {
-    //     if (opacity > 99) {
-    //         return "1.0";
-    //     } else {
-    //         return string(abi.encodePacked("0.", uint2str(opacity)));
-    //     }
-    // }
+    function preSetting(
+        uint256 id,
+        int128[3] calldata _observer,
+        uint8 _opacity,
+        bool _rotating_mode,
+        uint8 _angular_speed_deg,
+        bool _dist_v_normalize,
+        bool _face_or_wire,
+        uint24 _wire_color,
+        uint24[] calldata _color_list
+    ) internal view returns (GeneralSetting memory) {
+        require(
+            _color_list.length <= number_of_faces[id % 5],
+            "wrong number of colors"
+        );
+        require(_opacity < 100, "opacity should be less than 100");
+        int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
+        int128 tempNorm = norm(tempObserver);
+        require(tempNorm > 55340232221128654848, "too close");
+        GeneralSetting memory _generalSetting;
+        _generalSetting = GeneralSetting({
+            observer: _observer,
+            opacity: _opacity,
+            rotating_mode: _rotating_mode,
+            angular_speed_deg: _angular_speed_deg,
+            dist_v_normalize: _dist_v_normalize,
+            face_or_wire: _face_or_wire,
+            wire_color: _wire_color,
+            color_list: _color_list
+        });
+        return _generalSetting;
+        // return
+    }
 
-    // function tok_preview(
-    //     uint8 tid,
-    //     bytes calldata _bytes
-    // ) public view returns (string memory) {
-    //     //returns (string memory)
-    //     // int128[3] memory _plane_normal;
-    //     // int128[3] memory _plane_vs_observer;
-    //     // // int128[3][] memory _vertices = num2solid[tid].vertices;
-    //     // // uint16 _angle = num2solid[tid].angular_speed_deg;
-    //     solid memory _solid; // = num2solid[tid];
-    //     // int128[3] memory _center;
-    //     // int128[3] memory _observer = num2solid[tid].observer;
-    //     // // uint8[][] memory _face_list = num2solid[tid].face_list;
-    //     // // bool _face_or_wire = num2solid[tid].face_or_wire;
-    //     // // uint8[3][] memory _color_list = num2solid[tid].color_list;
-    //     // uint256[] memory _face_index;
-    //     // int128[] memory _projected_points_in_3d;
-    //     // int128[3] memory _z_prime;
-    //     // int128[3] memory _x_prime;
-    //     // int128[] memory _projected_points_in_2d;
-    //     // uint64[] memory pix0;
-    //     wire_struct memory wrs;
-    //     poly_struct memory pls;
-    //     pix_struct memory pxs;
-    //     // preview case + header
-    //     deepstruct memory _deepstruct;
-
-    //     _solid = update_struct(_bytes, tid);
-    //     // return (_solid.observer[0]);
-    //     //end of preview maniulation
-    //     int128[3] memory _observer = _solid.observer;
-    //     _deepstruct._center = center(_solid.vertices);
-    //     _observer = relative_observer(
-    //         _observer,
-    //         _deepstruct._center,
-    //         _solid.angular_speed_deg
-    //     );
-    //     _deepstruct._plane_normal = plane_normal_vector(
-    //         _observer,
-    //         _deepstruct._center
-    //     );
-    //     _deepstruct._plane_vs_observer = plane_vs_observer(
-    //         _observer,
-    //         _deepstruct._plane_normal
-    //     );
-
-    //     _deepstruct._z_prime = z_prime(_deepstruct._plane_normal);
-    //     _deepstruct._x_prime = x_prime(
-    //         _deepstruct._plane_normal,
-    //         _deepstruct._z_prime
-    //     );
-
-    //     _deepstruct._projected_points_in_3d = new_projected_points_in_3d(
-    //         _observer,
-    //         _deepstruct._plane_normal,
-    //         _solid.vertices
-    //     );
-    //     _deepstruct._projected_points_in_2d = new_projected_points_in_2d(
-    //         _deepstruct._projected_points_in_3d,
-    //         _deepstruct._z_prime,
-    //         _deepstruct._x_prime,
-    //         _deepstruct._plane_vs_observer
-    //     );
-    //     pxs.points_2d = _deepstruct._projected_points_in_2d;
-    //     pxs._observer = _solid.observer;
-    //     pxs._dist_v_normalize = _solid.dist_v_normalize;
-    //     //new Removal
-    //     // pxs._aspect_ratio_mode = _solid.aspect_ratio_mode;
-    //     // pxs._custome_h = _solid.custome_h;
-    //     // pxs._custome_w = _solid.custome_w;
-
-    //     _deepstruct.pix0 = new_scaled_newpoints(pxs);
-    //     // new removal
-    //     // (_deepstruct.whead, _deepstruct.hhead) = h_w_detection(
-    //     //     _solid.aspect_ratio_mode,
-    //     //     _solid.custome_h,
-    //     //     _solid.custome_w
-    //     // );
-    //     if (_solid.face_or_wire) {
-    //         _deepstruct._face_index = face_index(
-    //             _observer,
-    //             _solid.vertices,
-    //             _solid.face_list
-    //         );
-
-    //         pls.pix = _deepstruct.pix0;
-    //         pls.face_list = _solid.face_list;
-    //         pls.color_list = _solid.color_list;
-    //         pls.sorted_index = _deepstruct._face_index;
-    //         pls.opacity = _solid.opacity;
-    //         // new removal
-    //         // pls.headstring = head_func(_deepstruct.hhead, _deepstruct.whead);
-    //         pls.headstring = head_func(0, 0);
-    //         return new_svg_poly(pls);
-    //         // return "zart";
-    //     } else {
-    //         wrs.pix = _deepstruct.pix0;
-    //         wrs.adj = _solid.adjacency_matrix;
-    //         wrs.wire_color = _solid.wire_color;
-    //         //new removal
-    //         // wrs.headstring = head_func(_deepstruct.hhead, _deepstruct.whead);
-    //         wrs.headstring = head_func(0, 0);
-    //         return new_svg_wf(wrs);
-    //     }
-    //     // return new_svg_wf(pix0);
-    // }
-    function previewTokenById(uint256 tid) public view returns (string memory) {
+    function previewTokenById(
+        uint256 tid,
+        int128[3] calldata _observerP,
+        uint8 _opacityP,
+        bool _rotating_modeP,
+        uint8 _angular_speed_degP,
+        bool _dist_v_normalizeP,
+        bool _face_or_wireP,
+        uint24 _wire_colorP,
+        uint24[] calldata _color_listP
+    ) public view returns (string memory) {
         solid memory _solid = num2solid[tid % 5];
 
-        GeneralSetting memory _generalSetting = generalSettings[tid];
-        if (
-            _generalSetting.observer[0] == 0 && _generalSetting.observer[1] == 0
-        ) {
-            _generalSetting = defaultSetting;
-        }
+        GeneralSetting memory _generalSetting = preSetting(
+            tid,
+            _observerP,
+            _opacityP,
+            _rotating_modeP,
+            _angular_speed_degP,
+            _dist_v_normalizeP,
+            _face_or_wireP,
+            _wire_colorP,
+            _color_listP
+        );
+        // if (
+        //     _generalSetting.observer[0] == 0 && _generalSetting.observer[1] == 0
+        // ) {
+        //     _generalSetting = defaultSetting;
+        // }
 
         wire_struct memory wrs;
         poly_struct memory pls;
