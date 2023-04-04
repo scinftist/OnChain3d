@@ -16,26 +16,25 @@ contract PlatonicRebornV2 {
     //// svg header
     string private svgHead =
         '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
+    string private svgTail = "</svg>";
     // parts for rendering polygon svg
-    string headp0 = '<svg height="';
-    string headp1 = '" width="';
-    string headp2 = '">';
-    string p1 = '<polygon points="';
-    string p2 = '" fill="#';
+    string private headp0 = '<svg height="';
+    string private headp1 = '" width="';
+    string private headp2 = '">';
+    string private p1 = '<polygon points="';
+    string private p2 = '" fill="#';
 
-    string p3 = '" opacity="0.';
-    string p4 = '" />';
-    // string p4 = '" stroke-width="1" />';
-    string tailp = "</svg>";
+    string private p3 = '" opacity="0.';
+    string private p4 = '" />';
+
     ////
     // parts for rendering wireframe svg
-    string l1 = '<line x1="';
-    string l2 = '" y1="';
-    string l3 = '" x2="';
-    string l4 = '" y2="';
-    string l5 = '" stroke="#';
-    string l6 = '" stroke-width="2"/>';
-    string taill = "</svg>";
+    string private l1 = '<line x1="';
+    string private l2 = '" y1="';
+    string private l3 = '" x2="';
+    string private l4 = '" y2="';
+    string private l5 = '" stroke="#';
+    string private l6 = '" stroke-width="2"/>';
 
     /// struct to carry data along the the {renderTokenById} and {previewTokenById} - too many stack too deep
     struct deepstruct {
@@ -67,7 +66,7 @@ contract PlatonicRebornV2 {
         uint24[] color_list;
         uint8 opacity;
         uint8 polygon;
-        string headstring;
+        // string headstring;
     }
     // struct to carry data inside the {scaledPoints}
     struct pix_struct {
@@ -163,6 +162,7 @@ contract PlatonicRebornV2 {
         inital_array();
     }
 
+    // set setting
     function setSetting(
         uint256 id,
         int128[3] calldata _observer,
@@ -195,6 +195,7 @@ contract PlatonicRebornV2 {
         });
     }
 
+    // retrive setting
     function getSetting(
         uint256 id
     ) public view returns (GeneralSetting memory) {
@@ -273,7 +274,7 @@ contract PlatonicRebornV2 {
         return d;
     }
 
-    // compute the relative observer from the center of tthe solid object and compute the rotation along z axis if need per hour
+    // compute the relative observer from the center of tthe solid object and compute the rotation along z axis if need per 15 min
     function relative_observer(
         int128[3] memory observer0,
         int128[3] memory center0,
@@ -285,10 +286,8 @@ contract PlatonicRebornV2 {
             ABDKMath64x64.fromInt(0)
         ];
 
-        // uint256 tetha_rad = (block.number * (angle_deg % 360) * Pi) / 180;
-        uint256 tetha_rad = ((block.timestamp / 3600) *
-            (angle_deg % 360) *
-            Pi) / 180;
+        uint256 tetha_rad = ((block.timestamp / 900) * (angle_deg % 360) * Pi) /
+            180;
         int128 si = ABDKMath64x64.div(
             ABDKMath64x64.fromInt(Trigonometry.sin(tetha_rad)),
             ABDKMath64x64.fromInt(1e18)
@@ -355,29 +354,29 @@ contract PlatonicRebornV2 {
         int128[3] memory plane_normal0,
         int128[3][] memory vertices0
     ) internal pure returns (int128[] memory) {
-        int128[] memory dd = new int128[](vertices0.length * 3);
-        // int128[][] memory dd = new int128[3][](CO.length);
+        int128[] memory _pointsIn3d = new int128[](vertices0.length * 3);
+
         int128[3] memory a;
         int128 t;
         for (uint256 i = 0; i < vertices0.length; i++) {
             a = line_vector(relative_observer0, vertices0[i]);
-            // a = line_vector(vertices0[i], relative_observer0);
+
             t = dot(a, plane_normal0);
-            dd[i * 3 + 0] = ABDKMath64x64.add(
+            _pointsIn3d[i * 3 + 0] = ABDKMath64x64.add(
                 ABDKMath64x64.div(a[0], t),
                 relative_observer0[0]
             );
-            dd[i * 3 + 1] = ABDKMath64x64.add(
+            _pointsIn3d[i * 3 + 1] = ABDKMath64x64.add(
                 ABDKMath64x64.div(a[1], t),
                 relative_observer0[1]
             );
-            dd[i * 3 + 2] = ABDKMath64x64.add(
+            _pointsIn3d[i * 3 + 2] = ABDKMath64x64.add(
                 ABDKMath64x64.div(a[2], t),
                 relative_observer0[2]
             );
         }
 
-        return dd;
+        return _pointsIn3d;
     }
 
     // point in projection plane with respect of Z_prime, X_prime as new coordinate system with origin at observer_vs_plane point
@@ -387,9 +386,10 @@ contract PlatonicRebornV2 {
         int128[3] memory x_prime0,
         int128[3] memory observer_vs_plane0
     ) internal pure returns (int128[] memory) {
-        int128[] memory d = new int128[](points_3d.length);
-        for (uint256 i; i < (points_3d.length / 3); i++) {
-            d[i * 2 + 0] = dot(
+        uint256 len = (points_3d.length / 3);
+        int128[] memory points_in_2d = new int128[](len * 2);
+        for (uint256 i; i < len; i++) {
+            points_in_2d[i * 2 + 0] = dot(
                 line_vector(
                     observer_vs_plane0,
                     [
@@ -400,7 +400,7 @@ contract PlatonicRebornV2 {
                 ),
                 x_prime0
             );
-            d[i * 2 + 1] = dot(
+            points_in_2d[i * 2 + 1] = dot(
                 line_vector(
                     observer_vs_plane0,
                     [
@@ -413,18 +413,17 @@ contract PlatonicRebornV2 {
             );
         }
 
-        return d;
+        return points_in_2d;
     }
 
     // points scaled for the rendering from fixedpoint 64x64 to uint64, and normalization of the plane if neccesary
     function scaledPoints(
         pix_struct memory _pxs
     ) internal pure returns (uint64[] memory) {
-        int128 mx0;
-        // uint16 _w;
-        // uint16 _h;
+        int128 mx0; // maximum of X coordinate
+
         uint16 _t = 500;
-        int128 mx1;
+        int128 mx1; //maximum of Y coordinate
         int128 scale_factor;
         int128[] memory points_2d = _pxs.points_2d;
         mx0 = points_2d[0];
@@ -442,7 +441,7 @@ contract PlatonicRebornV2 {
         }
         if (mx0 < mx1) {
             mx0 = mx1;
-        }
+        } // mx0 : maximum of X and Y coordinate
 
         if (_pxs._dist_v_normalize) {
             scale_factor = ABDKMath64x64.div(
@@ -546,7 +545,7 @@ contract PlatonicRebornV2 {
                 df[i] = ABDKMath64x64.add(df[i], mx);
             }
         }
-        mx = 0;
+        mx = 0; // delete mx value
         for (uint256 i; i < face_list_length0; i++) {
             for (uint256 j; j < face_list_length0; j++) {
                 if (mx < df[j]) {
@@ -579,12 +578,11 @@ contract PlatonicRebornV2 {
         uint256 t = 0;
         uint256 t2 = 0;
         uint64 x0 = 0;
-        uint64 x1 = 0;
+        uint64 y0 = 0;
 
-        a = pls0.headstring;
         for (uint256 i = 0; i < face_list_length0; i++) {
             a = string(abi.encodePacked(a, p1));
-            // return "hi2";
+
             color = color_list0[sorted_index0[i]];
             t = sorted_index0[i];
 
@@ -592,16 +590,16 @@ contract PlatonicRebornV2 {
                 t2 = face_list0[t * _polygon + j] * 2;
                 x0 = pix0[t2];
                 // x0 = 0;
-                x1 = pix0[t2 + 1];
-                // x1 = 0; what????
+                y0 = pix0[t2 + 1];
+
                 a = string(abi.encodePacked(a, uint2str(x0), ","));
-                a = string(abi.encodePacked(a, uint2str(x1), " "));
+                a = string(abi.encodePacked(a, uint2str(y0), " "));
             }
             a = string(abi.encodePacked(a, p2, toHexString(color, 3), p3));
 
             a = string(abi.encodePacked(a, opacityStr, p4));
         }
-        a = string(abi.encodePacked(a, tailp));
+
         return a;
     }
 
@@ -609,10 +607,9 @@ contract PlatonicRebornV2 {
     function svgWireframe(
         wire_struct memory wrs0
     ) public view returns (string memory) {
-        // bool[][] memory adj = num2solid[0].adjacency_matrix;
         uint256 vLen = wrs0.lenVertices;
         string memory a = "";
-        a = wrs0.headstring;
+
         for (uint256 i = 1; i < vLen; i++) {
             for (uint256 j; j < i; j++) {
                 if (wrs0.adj[i * vLen + j] == true) {
@@ -644,7 +641,7 @@ contract PlatonicRebornV2 {
             }
         }
 
-        a = string(abi.encodePacked(a, taill));
+        // a = string(abi.encodePacked(a, svgTail));
         return a;
     }
 
@@ -682,7 +679,7 @@ contract PlatonicRebornV2 {
         return _generalSetting;
     }
 
-    //for preview the tokenSVG with new setting,
+    //for preview the tokenSVG with new setting, see EIP-4883
     function previewTokenById(
         uint256 tid,
         int128[3] calldata _observerP,
@@ -769,7 +766,7 @@ contract PlatonicRebornV2 {
             pls.opacity = _generalSetting.opacity;
             pls.polygon = _solid.face_polygon;
 
-            pls.headstring = svgHead;
+            // rendering svg in polygon setting
             return svgPolygon(pls);
         } else {
             wire_struct memory wrs;
@@ -779,13 +776,17 @@ contract PlatonicRebornV2 {
 
             wrs.lenVertices = _solid.vertices.length;
 
-            wrs.headstring = svgHead;
+            // wrs.headstring = "";
             return svgWireframe(wrs);
         }
     }
 
     //safe cast?
     function tokenURI(uint256 tokenId) public view returns (string memory) {
+        string memory _svg = string(
+            abi.encodePacked(svgHead, (renderTokenById(tokenId)), svgTail)
+        );
+
         return
             string(
                 abi.encodePacked(
@@ -794,7 +795,7 @@ contract PlatonicRebornV2 {
                         bytes(
                             abi.encodePacked(
                                 '"image": "data:image/svg+xml;base64,',
-                                Base64.encode(bytes(renderTokenById(tokenId))),
+                                Base64.encode(bytes(_svg)),
                                 '"'
                             )
                         )
@@ -803,49 +804,53 @@ contract PlatonicRebornV2 {
             );
     }
 
+    // for more detail see EIP-4883, renderTokenById -- Too many stack too deep see
     function renderTokenById(uint256 tid) public view returns (string memory) {
-        solid memory _solid = num2solid[tid];
+        solid memory _solid = num2solid[tid % 5];
 
         GeneralSetting memory _generalSetting = generalSettings[tid];
+        // if setting is not set load defualt setting
         if (
             _generalSetting.observer[0] == 0 && _generalSetting.observer[1] == 0
         ) {
             _generalSetting = defaultSetting;
         }
-
+        //structs to carry data - to avoid stack too deep
         pix_struct memory pxs;
-
         deepstruct memory _deepstruct;
 
         int128[3] memory _observer = _generalSetting.observer;
         _deepstruct._center = center(_solid.vertices);
-
+        // relative observer with respect to center of the solid object
         _observer = relative_observer(
             _observer,
             _deepstruct._center,
             _generalSetting.angular_speed_deg
         );
+        // projection plane normal vector
         _deepstruct._plane_normal = plane_normal_vector(
             _observer,
             _deepstruct._center
         );
+        // new origin in the projection plane
         _deepstruct._plane_vs_observer = plane_vs_observer(
             _observer,
             _deepstruct._plane_normal
         );
-
+        // z_prime , normalize projection of (0,0,-1) uint vector to projection plane
         _deepstruct._z_prime = z_prime(_deepstruct._plane_normal);
+        // cross product of z_prime with plane normal to get the perpendicular vector inside the projection plane
         _deepstruct._x_prime = x_prime(
             _deepstruct._plane_normal,
             _deepstruct._z_prime
         );
-
+        // projected point onto projection plane in 3d
         _deepstruct._projected_points_in_3d = projectedPointsIn3d(
             _observer,
             _deepstruct._plane_normal,
             _solid.vertices
         );
-
+        //  projection points onto the plane in 2d
         _deepstruct._projected_points_in_2d = projectedPointsIn2d(
             _deepstruct._projected_points_in_3d,
             _deepstruct._z_prime,
@@ -855,11 +860,12 @@ contract PlatonicRebornV2 {
         pxs.points_2d = _deepstruct._projected_points_in_2d;
         pxs._observer = _generalSetting.observer;
         pxs._dist_v_normalize = _generalSetting.dist_v_normalize;
-
+        // scaling the points and removing decimal point
         _deepstruct.pix0 = scaledPoints(pxs);
 
         if (_generalSetting.face_or_wire) {
             poly_struct memory pls;
+            // depth sorting the polygon (faces)
             _deepstruct._face_index = face_index(
                 _observer,
                 _solid.vertices,
@@ -874,7 +880,7 @@ contract PlatonicRebornV2 {
             pls.opacity = _generalSetting.opacity;
             pls.polygon = _solid.face_polygon;
 
-            pls.headstring = svgHead;
+            // rendering svg in polygon setting
             return svgPolygon(pls);
         } else {
             wire_struct memory wrs;
@@ -884,7 +890,7 @@ contract PlatonicRebornV2 {
 
             wrs.lenVertices = _solid.vertices.length;
 
-            wrs.headstring = svgHead;
+            // rendering svg in wireframe setting
             return svgWireframe(wrs);
         }
     }
@@ -924,6 +930,7 @@ contract PlatonicRebornV2 {
         return number;
     }
 
+    //needs check
     function toHexString(
         uint256 value,
         uint256 length

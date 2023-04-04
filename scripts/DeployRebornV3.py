@@ -38,6 +38,11 @@ def deploy_and_create(mint_req=True):
         t = demo.renderTokenById(i)
         print(t)
 
+    for i in range(5):
+        t = demo.tokenURI(i)
+        sleep(2)
+        print(t)
+
 
 def main():
     deploy_and_create(True)
