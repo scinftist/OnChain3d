@@ -2,13 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-// import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC721/ERC721.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC721/ERC721.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/Ownable.sol";
-// import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/security/ReentrancyGuard.sol";
-// import ABDKMath64x64 ;// from "./ABDK.sol";
-// import Trigonometry ;//from "./Trigonometry.sol";
 import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";
 
 import "./ABDKMath64x64.sol";
@@ -16,13 +9,14 @@ import "./Trigonometry.sol";
 
 contract PlatonicRebornV2 {
     uint256 Pi = 3141592653589793238;
+    //remove before deploy
     uint256 s = 0;
-    // int128[3][8] public CO;
-    // bool[8][8] public C;
-    // uint256[4][6] public CF;
+    //observer distance to projection plane
     int128 public dist = ABDKMath64x64.fromInt(1);
-    ////
-    string headp = '<svg height="400" width="400">';
+    //// svg header
+    string private svgHead =
+        '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
+    // parts for rendering polygon svg
     string headp0 = '<svg height="';
     string headp1 = '" width="';
     string headp2 = '">';
@@ -30,10 +24,11 @@ contract PlatonicRebornV2 {
     string p2 = '" fill="#';
 
     string p3 = '" opacity="0.';
-    string p4 = '" stroke-width="1" />';
+    string p4 = '" />';
+    // string p4 = '" stroke-width="1" />';
     string tailp = "</svg>";
     ////
-    string headl = '<svg height="400" width="400">';
+    // parts for rendering wireframe svg
     string l1 = '<line x1="';
     string l2 = '" y1="';
     string l3 = '" x2="';
@@ -42,7 +37,7 @@ contract PlatonicRebornV2 {
     string l6 = '" stroke-width="2"/>';
     string taill = "</svg>";
 
-    /// / aspect ratio + distance aware vs normalize
+    /// struct to carry data along the the {renderTokenById} and {previewTokenById} - too many stack too deep
     struct deepstruct {
         int128[3] _plane_normal;
         int128[3] _plane_vs_observer;
@@ -54,21 +49,17 @@ contract PlatonicRebornV2 {
         int128[3] _x_prime;
         int128[] _projected_points_in_2d;
         uint64[] pix0;
-        // uint16 hhead;
-        // uint16 whead;
     }
 
-    // if [][] not posible do[] ([]*[]);;;;;;;;;;;;;
+    // struct to carry data along the the {svgWireframe} to  cumpute wireframe setting- too many stack too deep
     struct wire_struct {
         uint64[] pix;
         bool[] adj;
         uint24 wire_color;
         uint256 lenVertices;
-        // uint8 aspect_ratio_mode;
-        // uint16[2] custome_w_h;
         string headstring;
     }
-    // uint8[3][] color_list;
+    // struct to carry data along the the {svgPolygon}  to  cumpute polygon setting- too many stack too deep
     struct poly_struct {
         uint64[] pix;
         uint256[] sorted_index;
@@ -76,24 +67,15 @@ contract PlatonicRebornV2 {
         uint24[] color_list;
         uint8 opacity;
         uint8 polygon;
-        // uint8 aspect_ratio_mode;
-        // uint16[2] custome_w_h;
         string headstring;
     }
+    // struct to carry data inside the {scaledPoints}
     struct pix_struct {
         int128[] points_2d;
         int128[3] _observer;
         bool _dist_v_normalize;
-        // uint8 _aspect_ratio_mode;
-        // uint16 _custome_h;
-        // uint16 _custome_w;
     }
-    // int128[] memory points_2d,
-    //     int128[3] memory _observer,
-    //     bool _dist_v_normalize,
-    //     uint8 _aspect_ratio_mode,
-    //     uint16[2] memory _custome_w_h
-    // uint8[3][] color_list;
+    // struct for holding data of 5 solid that many tokens uses
     struct solid {
         string name;
         int128[3][] vertices;
@@ -101,6 +83,7 @@ contract PlatonicRebornV2 {
         uint8[] face_list;
         uint8 face_polygon;
     }
+    // struct for holding each token setting
     struct GeneralSetting {
         int128[3] observer;
         uint8 opacity;
@@ -111,16 +94,16 @@ contract PlatonicRebornV2 {
         uint24 wire_color;
         uint24[] color_list;
     }
-    //uint8?//number of faces ?
+    // defualt value for token that has not set their generalSettings[tokenId] yet.
     GeneralSetting private defaultSetting;
+    // five solid
     mapping(uint256 => solid) num2solid;
+    // tokenId -> GeneralSetting
     mapping(uint256 => GeneralSetting) generalSettings;
-    //
+    // number of faces of each solid
     uint256[5] private number_of_faces = [4, 6, 8, 12, 20];
 
-    //num2solid[n].name = 'tetrahydra
-    ///covert to 64x64 before deploy
-
+    // uploading data of the 5 platonic solid
     function solidStruct_IMU(
         uint8 _tokenId,
         string calldata _name,
@@ -129,7 +112,6 @@ contract PlatonicRebornV2 {
         uint8[] calldata _face_list,
         uint8 _face_polygon
     ) external {
-        // num2solid[_tokenId] = _solid;
         num2solid[_tokenId].name = _name;
         num2solid[_tokenId].vertices = _vertices;
         num2solid[_tokenId].adjacency_matrix = _adjacency_matrix;
@@ -137,6 +119,7 @@ contract PlatonicRebornV2 {
         num2solid[_tokenId].face_polygon = _face_polygon;
     }
 
+    // initialize the default value, set in the constructor
     function inital_array() private {
         // num2solid[1].name = "Cube";
         defaultSetting.observer = [
@@ -218,6 +201,7 @@ contract PlatonicRebornV2 {
         return generalSettings[id];
     }
 
+    // return the cross product of to vector
     function cross(
         int128[3] memory a,
         int128[3] memory b
@@ -238,6 +222,7 @@ contract PlatonicRebornV2 {
         return d;
     }
 
+    // return the dot product of to vector
     function dot(
         int128[3] memory a,
         int128[3] memory b
@@ -249,10 +234,12 @@ contract PlatonicRebornV2 {
         return d;
     }
 
+    // compute the norm of a vector
     function norm(int128[3] memory a) internal pure returns (int128) {
         return ABDKMath64x64.sqrt(dot(a, a));
     }
 
+    // returns the vector ab , vector form point a to b, and return it as a fixed point 64x6x integer[3]
     function line_vector(
         int128[3] memory a,
         int128[3] memory b
@@ -265,7 +252,7 @@ contract PlatonicRebornV2 {
         return d;
     }
 
-    // maybe it's unnecesarry
+    // compute the center of the solid object
     function center(
         int128[3][] memory vertices0
     ) internal pure returns (int128[3] memory) {
@@ -286,7 +273,7 @@ contract PlatonicRebornV2 {
         return d;
     }
 
-    // perday
+    // compute the relative observer from the center of tthe solid object and compute the rotation along z axis if need per hour
     function relative_observer(
         int128[3] memory observer0,
         int128[3] memory center0,
@@ -299,7 +286,7 @@ contract PlatonicRebornV2 {
         ];
 
         // uint256 tetha_rad = (block.number * (angle_deg % 360) * Pi) / 180;
-        uint256 tetha_rad = ((block.timestamp / 86400) *
+        uint256 tetha_rad = ((block.timestamp / 3600) *
             (angle_deg % 360) *
             Pi) / 180;
         int128 si = ABDKMath64x64.div(
@@ -323,6 +310,7 @@ contract PlatonicRebornV2 {
         return d;
     }
 
+    // compute normal vector of the projection plane
     function plane_normal_vector(
         int128[3] memory relative_observer0,
         int128[3] memory center0
@@ -336,6 +324,7 @@ contract PlatonicRebornV2 {
         return d;
     }
 
+    // middle point of the projection plane
     function plane_vs_observer(
         int128[3] memory relative_observer0,
         int128[3] memory plane_normal0
@@ -360,7 +349,8 @@ contract PlatonicRebornV2 {
         return d;
     }
 
-    function new_projected_points_in_3d(
+    // points intersection with observer plane in 3d
+    function projectedPointsIn3d(
         int128[3] memory relative_observer0,
         int128[3] memory plane_normal0,
         int128[3][] memory vertices0
@@ -390,7 +380,8 @@ contract PlatonicRebornV2 {
         return dd;
     }
 
-    function new_projected_points_in_2d(
+    // point in projection plane with respect of Z_prime, X_prime as new coordinate system with origin at observer_vs_plane point
+    function projectedPointsIn2d(
         int128[] memory points_3d,
         int128[3] memory z_prime0,
         int128[3] memory x_prime0,
@@ -425,13 +416,14 @@ contract PlatonicRebornV2 {
         return d;
     }
 
-    function new_scaled_newpoints(
+    // points scaled for the rendering from fixedpoint 64x64 to uint64, and normalization of the plane if neccesary
+    function scaledPoints(
         pix_struct memory _pxs
     ) internal pure returns (uint64[] memory) {
         int128 mx0;
-        uint16 _w;
-        uint16 _h;
-        uint16 _t;
+        // uint16 _w;
+        // uint16 _h;
+        uint16 _t = 500;
         int128 mx1;
         int128 scale_factor;
         int128[] memory points_2d = _pxs.points_2d;
@@ -450,19 +442,6 @@ contract PlatonicRebornV2 {
         }
         if (mx0 < mx1) {
             mx0 = mx1;
-        }
-        // 100 = fs min(w,h)/2
-        (_h, _w) = (1000, 1000);
-        // new removal
-        // (_h, _w) = h_w_detection(
-        //     _pxs._aspect_ratio_mode,
-        //     _pxs._custome_h,
-        //     _pxs._custome_w
-        // );
-        if (_w < _h) {
-            _t = _w / 2;
-        } else {
-            _t = _h / 2;
         }
 
         if (_pxs._dist_v_normalize) {
@@ -501,7 +480,133 @@ contract PlatonicRebornV2 {
         return pix;
     }
 
-    function new_svg_wf(
+    // poject vector (0,0,-1) to the plane
+    function z_prime(
+        int128[3] memory plane_normal0
+    ) internal pure returns (int128[3] memory) {
+        int128[3] memory z = [
+            ABDKMath64x64.fromInt(0),
+            ABDKMath64x64.fromInt(0),
+            ABDKMath64x64.fromInt(-1)
+        ];
+        //svg has left handed coordinate system hence -z
+        int128[3] memory z_p;
+        int128 nz;
+        int128 dz;
+        dz = dot(z, plane_normal0);
+        z_p[0] = ABDKMath64x64.sub(
+            z[0],
+            ABDKMath64x64.mul(dz, plane_normal0[0])
+        );
+        z_p[1] = ABDKMath64x64.sub(
+            z[1],
+            ABDKMath64x64.mul(dz, plane_normal0[1])
+        );
+        z_p[2] = ABDKMath64x64.sub(
+            z[2],
+            ABDKMath64x64.mul(dz, plane_normal0[2])
+        );
+        nz = norm(z_p);
+        z_p[0] = ABDKMath64x64.div(z_p[0], nz);
+        z_p[1] = ABDKMath64x64.div(z_p[1], nz);
+        z_p[2] = ABDKMath64x64.div(z_p[2], nz);
+
+        return z_p;
+    }
+
+    // cross Z-prime with plane normal to find a perpendicular vetor to z_prime, inside the plane
+    function x_prime(
+        int128[3] memory plane_normal0,
+        int128[3] memory z_prime0
+    ) internal pure returns (int128[3] memory) {
+        return cross(z_prime0, plane_normal0);
+    }
+
+    // depth sorting face polygons to be rendered
+    function face_index(
+        int128[3] memory relative_observer0,
+        int128[3][] memory vertices0,
+        uint8[] memory face_list0,
+        uint8 polygon0
+    ) internal pure returns (uint256[] memory) {
+        uint256 face_list_length0 = face_list0.length / polygon0;
+        int128[] memory df = new int128[](face_list_length0);
+        int128 mx;
+        uint256 mxi;
+        uint256[] memory sorted_index = new uint256[](face_list_length0);
+
+        for (uint256 i; i < face_list_length0; i++) {
+            for (uint256 j; j < polygon0; j++) {
+                mx = norm(
+                    line_vector(
+                        vertices0[face_list0[i * polygon0 + j]],
+                        relative_observer0
+                    )
+                );
+                df[i] = ABDKMath64x64.add(df[i], mx);
+            }
+        }
+        mx = 0;
+        for (uint256 i; i < face_list_length0; i++) {
+            for (uint256 j; j < face_list_length0; j++) {
+                if (mx < df[j]) {
+                    mx = df[j];
+                    mxi = j;
+                }
+            }
+            delete df[mxi];
+            // df[mxi]
+            sorted_index[i] = mxi;
+            mx = 0;
+        }
+        return sorted_index;
+    }
+
+    // rendering token SVG with the polygon setting (face)
+    function svgPolygon(
+        poly_struct memory pls0
+    ) public view returns (string memory) {
+        string memory a = "";
+        uint8[] memory face_list0 = pls0.face_list;
+        uint8 _polygon = pls0.polygon;
+        uint256 face_list_length0 = face_list0.length / _polygon;
+        uint24 color;
+        uint24[] memory color_list0 = pls0.color_list;
+        uint64[] memory pix0 = pls0.pix;
+        string memory opacityStr = uint2str(pls0.opacity);
+
+        uint256[] memory sorted_index0 = pls0.sorted_index;
+        uint256 t = 0;
+        uint256 t2 = 0;
+        uint64 x0 = 0;
+        uint64 x1 = 0;
+
+        a = pls0.headstring;
+        for (uint256 i = 0; i < face_list_length0; i++) {
+            a = string(abi.encodePacked(a, p1));
+            // return "hi2";
+            color = color_list0[sorted_index0[i]];
+            t = sorted_index0[i];
+
+            for (uint256 j; j < _polygon; j++) {
+                t2 = face_list0[t * _polygon + j] * 2;
+                x0 = pix0[t2];
+                // x0 = 0;
+                x1 = pix0[t2 + 1];
+                // x1 = 0; what????
+                a = string(abi.encodePacked(a, uint2str(x0), ","));
+                a = string(abi.encodePacked(a, uint2str(x1), " "));
+            }
+            a = string(abi.encodePacked(a, p2, toHexString(color, 3), p3));
+
+            a = string(abi.encodePacked(a, opacityStr, p4));
+        }
+        a = string(abi.encodePacked(a, tailp));
+        return a;
+    }
+
+    // rendering token with wireframe (wire) setting
+    function svgWireframe(
         wire_struct memory wrs0
     ) public view returns (string memory) {
         // bool[][] memory adj = num2solid[0].adjacency_matrix;
@@ -543,138 +648,7 @@ contract PlatonicRebornV2 {
         return a;
     }
 
-    function z_prime(
-        int128[3] memory plane_normal0
-    ) internal pure returns (int128[3] memory) {
-        int128[3] memory z = [
-            ABDKMath64x64.fromInt(0),
-            ABDKMath64x64.fromInt(0),
-            ABDKMath64x64.fromInt(-1)
-        ];
-        //svg has left handed coordinate system hence -z
-        int128[3] memory z_p;
-        int128 nz;
-        int128 dz;
-        dz = dot(z, plane_normal0);
-        z_p[0] = ABDKMath64x64.sub(
-            z[0],
-            ABDKMath64x64.mul(dz, plane_normal0[0])
-        );
-        z_p[1] = ABDKMath64x64.sub(
-            z[1],
-            ABDKMath64x64.mul(dz, plane_normal0[1])
-        );
-        z_p[2] = ABDKMath64x64.sub(
-            z[2],
-            ABDKMath64x64.mul(dz, plane_normal0[2])
-        );
-        nz = norm(z_p);
-        z_p[0] = ABDKMath64x64.div(z_p[0], nz);
-        z_p[1] = ABDKMath64x64.div(z_p[1], nz);
-        z_p[2] = ABDKMath64x64.div(z_p[2], nz);
-
-        return z_p;
-    }
-
-    function x_prime(
-        int128[3] memory plane_normal0,
-        int128[3] memory z_prime0
-    ) internal pure returns (int128[3] memory) {
-        return cross(z_prime0, plane_normal0);
-    }
-
-    function face_index(
-        int128[3] memory relative_observer0,
-        int128[3][] memory vertices0,
-        uint8[] memory face_list0,
-        uint8 polygon0
-    ) internal pure returns (uint256[] memory) {
-        uint256 face_list_length0 = face_list0.length / polygon0;
-        int128[] memory df = new int128[](face_list_length0);
-        int128 mx;
-        uint256 mxi;
-        uint256[] memory sorted_index = new uint256[](face_list_length0);
-        // for (uint256 i; i < face_list_length0; i++) {
-        //     for (uint256 j; j < polygon0; j++)
-        //         df[i] = ABDKMath64x64.add(
-        //             df[i],
-        //             norm(
-        //                 line_vector(
-        //                     vertices0[face_list0[i * 3 + j]],
-        //                     relative_observer0
-        //                 )
-        //             )
-        //         );
-        // }
-        for (uint256 i; i < face_list_length0; i++) {
-            for (uint256 j; j < polygon0; j++) {
-                mx = norm(
-                    line_vector(
-                        vertices0[face_list0[i * polygon0 + j]],
-                        relative_observer0
-                    )
-                );
-                df[i] = ABDKMath64x64.add(df[i], mx);
-            }
-        }
-        mx = 0;
-        for (uint256 i; i < face_list_length0; i++) {
-            for (uint256 j; j < face_list_length0; j++) {
-                if (mx < df[j]) {
-                    mx = df[j];
-                    mxi = j;
-                }
-            }
-            delete df[mxi];
-            // df[mxi]
-            sorted_index[i] = mxi;
-            mx = 0;
-        }
-        return sorted_index;
-    }
-
-    function new_svg_poly(
-        poly_struct memory pls0
-    ) public view returns (string memory) {
-        string memory a = "";
-        uint8[] memory face_list0 = pls0.face_list;
-        uint8 _polygon = pls0.polygon;
-        uint256 face_list_length0 = face_list0.length / _polygon;
-        uint24 color;
-        uint24[] memory color_list0 = pls0.color_list;
-        uint64[] memory pix0 = pls0.pix;
-        string memory opacityStr = uint2str(pls0.opacity);
-        // string memory opacitystr0 = opacitystr(pls0.opacity);
-        uint256[] memory sorted_index0 = pls0.sorted_index;
-        uint256 t = 0;
-        uint256 t2 = 0;
-        uint64 x0 = 0;
-        uint64 x1 = 0;
-
-        a = pls0.headstring;
-        for (uint256 i = 0; i < face_list_length0; i++) {
-            a = string(abi.encodePacked(a, p1));
-            // return "hi2";
-            color = color_list0[sorted_index0[i]];
-            t = sorted_index0[i];
-
-            for (uint256 j; j < _polygon; j++) {
-                t2 = face_list0[t * _polygon + j] * 2;
-                x0 = pix0[t2];
-                // x0 = 0;
-                x1 = pix0[t2 + 1];
-                // x1 = 0; what????
-                a = string(abi.encodePacked(a, uint2str(x0), ","));
-                a = string(abi.encodePacked(a, uint2str(x1), " "));
-            }
-            a = string(abi.encodePacked(a, p2, toHexString(color, 3), p3));
-
-            a = string(abi.encodePacked(a, opacityStr, p4));
-        }
-        a = string(abi.encodePacked(a, tailp));
-        return a;
-    }
-
+    // preparing setting of token for {previewTokenById}
     function preSetting(
         uint256 id,
         int128[3] calldata _observer,
@@ -706,9 +680,9 @@ contract PlatonicRebornV2 {
             color_list: _color_list
         });
         return _generalSetting;
-        // return
     }
 
+    //for preview the tokenSVG with new setting,
     function previewTokenById(
         uint256 tid,
         int128[3] calldata _observerP,
@@ -733,21 +707,11 @@ contract PlatonicRebornV2 {
             _wire_colorP,
             _color_listP
         );
-        // if (
-        //     _generalSetting.observer[0] == 0 && _generalSetting.observer[1] == 0
-        // ) {
-        //     _generalSetting = defaultSetting;
-        // }
 
-        wire_struct memory wrs;
-        poly_struct memory pls;
         pix_struct memory pxs;
-        // preview case + header
+
         deepstruct memory _deepstruct;
 
-        // _solid = update_struct(_bytes, tid);
-        // return (_solid.observer[0]);
-        //end of preview maniulation
         int128[3] memory _observer = _generalSetting.observer;
         _deepstruct._center = center(_solid.vertices);
 
@@ -771,13 +735,13 @@ contract PlatonicRebornV2 {
             _deepstruct._z_prime
         );
 
-        _deepstruct._projected_points_in_3d = new_projected_points_in_3d(
+        _deepstruct._projected_points_in_3d = projectedPointsIn3d(
             _observer,
             _deepstruct._plane_normal,
             _solid.vertices
         );
 
-        _deepstruct._projected_points_in_2d = new_projected_points_in_2d(
+        _deepstruct._projected_points_in_2d = projectedPointsIn2d(
             _deepstruct._projected_points_in_3d,
             _deepstruct._z_prime,
             _deepstruct._x_prime,
@@ -787,21 +751,10 @@ contract PlatonicRebornV2 {
         pxs._observer = _generalSetting.observer;
         pxs._dist_v_normalize = _generalSetting.dist_v_normalize;
 
-        // new removal
-        // pxs._aspect_ratio_mode = _solid.aspect_ratio_mode;
-        // pxs._custome_h = _solid.custome_h;
-        // pxs._custome_w = _solid.custome_w;
-        // return "zart";
-        _deepstruct.pix0 = new_scaled_newpoints(pxs);
-        // return "zart";
-        // new removal
-        // (_deepstruct.whead, _deepstruct.hhead) = h_w_detection(
-        //     _solid.aspect_ratio_mode,
-        //     _solid.custome_h,
-        //     _solid.custome_w
-        // );
+        _deepstruct.pix0 = scaledPoints(pxs);
 
         if (_generalSetting.face_or_wire) {
+            poly_struct memory pls;
             _deepstruct._face_index = face_index(
                 _observer,
                 _solid.vertices,
@@ -815,24 +768,20 @@ contract PlatonicRebornV2 {
             pls.sorted_index = _deepstruct._face_index;
             pls.opacity = _generalSetting.opacity;
             pls.polygon = _solid.face_polygon;
-            // return "zart0";
-            // new removal
-            // pls.headstring = head_func(_deepstruct.hhead, _deepstruct.whead);
-            pls.headstring = head_func(0, 0);
-            return new_svg_poly(pls);
-            // return "zart";
+
+            pls.headstring = svgHead;
+            return svgPolygon(pls);
         } else {
+            wire_struct memory wrs;
             wrs.pix = _deepstruct.pix0;
             wrs.adj = _solid.adjacency_matrix;
             wrs.wire_color = _generalSetting.wire_color;
-            //new add
+
             wrs.lenVertices = _solid.vertices.length;
-            //new removal
-            // wrs.headstring = head_func(_deepstruct.hhead, _deepstruct.whead);
-            wrs.headstring = head_func(0, 0);
-            return new_svg_wf(wrs);
+
+            wrs.headstring = svgHead;
+            return svgWireframe(wrs);
         }
-        // return new_svg_wf(pix0);
     }
 
     //safe cast?
@@ -864,15 +813,10 @@ contract PlatonicRebornV2 {
             _generalSetting = defaultSetting;
         }
 
-        wire_struct memory wrs;
-        poly_struct memory pls;
         pix_struct memory pxs;
-        // preview case + header
+
         deepstruct memory _deepstruct;
 
-        // _solid = update_struct(_bytes, tid);
-        // return (_solid.observer[0]);
-        //end of preview maniulation
         int128[3] memory _observer = _generalSetting.observer;
         _deepstruct._center = center(_solid.vertices);
 
@@ -896,13 +840,13 @@ contract PlatonicRebornV2 {
             _deepstruct._z_prime
         );
 
-        _deepstruct._projected_points_in_3d = new_projected_points_in_3d(
+        _deepstruct._projected_points_in_3d = projectedPointsIn3d(
             _observer,
             _deepstruct._plane_normal,
             _solid.vertices
         );
 
-        _deepstruct._projected_points_in_2d = new_projected_points_in_2d(
+        _deepstruct._projected_points_in_2d = projectedPointsIn2d(
             _deepstruct._projected_points_in_3d,
             _deepstruct._z_prime,
             _deepstruct._x_prime,
@@ -912,21 +856,10 @@ contract PlatonicRebornV2 {
         pxs._observer = _generalSetting.observer;
         pxs._dist_v_normalize = _generalSetting.dist_v_normalize;
 
-        // new removal
-        // pxs._aspect_ratio_mode = _solid.aspect_ratio_mode;
-        // pxs._custome_h = _solid.custome_h;
-        // pxs._custome_w = _solid.custome_w;
-        // return "zart";
-        _deepstruct.pix0 = new_scaled_newpoints(pxs);
-        // return "zart";
-        // new removal
-        // (_deepstruct.whead, _deepstruct.hhead) = h_w_detection(
-        //     _solid.aspect_ratio_mode,
-        //     _solid.custome_h,
-        //     _solid.custome_w
-        // );
+        _deepstruct.pix0 = scaledPoints(pxs);
 
         if (_generalSetting.face_or_wire) {
+            poly_struct memory pls;
             _deepstruct._face_index = face_index(
                 _observer,
                 _solid.vertices,
@@ -940,182 +873,21 @@ contract PlatonicRebornV2 {
             pls.sorted_index = _deepstruct._face_index;
             pls.opacity = _generalSetting.opacity;
             pls.polygon = _solid.face_polygon;
-            // return "zart0";
-            // new removal
-            // pls.headstring = head_func(_deepstruct.hhead, _deepstruct.whead);
-            pls.headstring = head_func(0, 0);
-            return new_svg_poly(pls);
-            // return "zart";
+
+            pls.headstring = svgHead;
+            return svgPolygon(pls);
         } else {
+            wire_struct memory wrs;
             wrs.pix = _deepstruct.pix0;
             wrs.adj = _solid.adjacency_matrix;
             wrs.wire_color = _generalSetting.wire_color;
-            //new add
+
             wrs.lenVertices = _solid.vertices.length;
-            //new removal
-            // wrs.headstring = head_func(_deepstruct.hhead, _deepstruct.whead);
-            wrs.headstring = head_func(0, 0);
-            return new_svg_wf(wrs);
+
+            wrs.headstring = svgHead;
+            return svgWireframe(wrs);
         }
-        // return new_svg_wf(pix0);
     }
-
-    function h_w_detection(
-        uint8 _aspectratio,
-        uint16 _custome_h,
-        uint16 _custome_w
-    ) internal pure returns (uint16, uint16) {
-        return (1000, 1000);
-        // if (_aspectratio == 0) {
-        //     return (1000, 1000);
-        // }
-        // if (_aspectratio == 1) {
-        //     return (1920, 1080);
-        // }
-        // if (_aspectratio == 2) {
-        //     return (_custome_h, _custome_w);
-        // }
-    }
-
-    function head_func(
-        uint16 _h,
-        uint16 _w
-    ) internal pure returns (string memory) {
-        // '<svg height="400" width="400">'
-        // return
-        //     string(
-        //         abi.encodePacked(
-        //             '<svg height="',
-        //             uint2str(_h),
-        //             '" width="',
-        //             uint2str(_w),
-        //             '">'
-        //         )
-        //     );
-        return
-            '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
-    }
-
-    // function update_struct(
-    //     bytes calldata _bytes,
-    //     uint8 tid
-    // ) internal view returns (solid memory) {
-    //     solid memory _solid = num2solid[tid];
-    //     // bool a = true;
-    //     uint8 tempbyte = 0;
-    //     uint256 ai = 0;
-    //     uint8 headflag = 0;
-    //     uint8 headcontrol = 0;
-    //     while (ai < _bytes.length) {
-    //         tempbyte = uint8(_bytes[ai]);
-    //         headflag = tempbyte & 15;
-    //         headcontrol = (tempbyte >> 4) & 15;
-    //         if (headflag == 0) {
-    //             ai += 1;
-    //             bytes memory nbytes;
-    //             uint256 obs;
-    //             uint256 mask = 2 ** 127 - 1;
-    //             nbytes = bytes(_bytes[ai:ai + 16]);
-    //             // _solid.observer[headcontrol] = int128(_bytes[ai:ai + 16]);
-    //             ai += 16;
-    //             obs = bytesToUint(nbytes);
-    //             if ((obs & (2 ** 127)) == 1) {
-    //                 _solid.observer[headcontrol] = int128(
-    //                     int256(uint256(obs & mask) - (2 ** 128))
-    //                 );
-    //                 // ai += 16;
-    //             } else {
-    //                 _solid.observer[headcontrol] = int128(int256(obs));
-    //                 // ai += 16;
-    //             }
-    //         }
-
-    //         if (headflag == 1) {
-    //             ai += 1;
-    //             _solid.face_or_wire = ((headcontrol & 1) == 1);
-    //         }
-    //         if (headflag == 2) {
-    //             ai += 1;
-    //             _solid.rotating_mode = (headcontrol == 1);
-    //         }
-    //         if (headflag == 3) {
-    //             ai += 1;
-    //             require(uint8(_bytes[ai]) < 100, "opacity must be under 100");
-    //             _solid.opacity = uint2str(uint8(_bytes[ai]));
-    //             ai += 1;
-    //         }
-    //         if (headflag == 4) {
-    //             ai += 1;
-    //             // uint256 mask = 2**15 - 1;
-    //             // bytes memory nbytes = bytes(_bytes[ai:ai + 2]);
-    //             uint256 ang = (bytesToUint(bytes(_bytes[ai:ai + 2])));
-    //             require(ang < 361, "out of bound()");
-    //             _solid.opacity = uint2str(ang);
-    //             ai += 2;
-    //             // require();
-    //         }
-    //         if (headflag == 5) {
-    //             ai += 1;
-    //             // _solid.wire_color = [
-    //             //     uint8(_bytes[ai]),
-    //             //     uint8(_bytes[ai + 1]),
-    //             //     uint8(_bytes[ai + 2])
-    //             // ]; //, uint8(0), uint8(0)];
-    //             // assert(_solid.wire_color[0] == 1);
-    //             ai += 3;
-    //             // for (uint256 i = 0; i < 3; i++) {
-    //             // _solid.wire_color = uint8(_bytes[ai]);
-    //             //     ai += 1;
-    //             // }
-    //         }
-    //         if (headflag == 6) {
-    //             ai += 1;
-    //             // _solid.color_list[uint8(_bytes[ai])] = [
-    //             //     uint8(_bytes[ai + 1]),
-    //             //     uint8(_bytes[ai + 2]),
-    //             //     uint8(_bytes[ai + 3])
-    //             // ];
-    //             ai += 4;
-    //         }
-    //         if (headflag == 7) {
-    //             ai++;
-    //             uint256 number_of_faces = _solid.face_list.length;
-    //             for (uint256 i = 0; i < number_of_faces; i++) {
-    //                 // _solid.color_list[i] = [
-    //                 //     uint8(_bytes[ai]),
-    //                 //     uint8(_bytes[ai + 1]),
-    //                 //     uint8(_bytes[ai + 2])
-    //                 // ];
-    //                 ai += 3;
-    //             }
-    //         }
-    //         if (headflag == 8) {
-    //             ai += 1;
-    //             _solid.dist_v_normalize = ((headcontrol & 1) == 1);
-    //         }
-    //         //new removal
-    //         // if (headflag == 9) {
-    //         //     ai += 1;
-    //         //     if (headcontrol == 0) {
-    //         //         _solid.aspect_ratio_mode = 0;
-    //         //     }
-    //         //     if (headcontrol == 1) {
-    //         //         _solid.aspect_ratio_mode = 1;
-    //         //     }
-    //         //     if (headcontrol == 2) {
-    //         //         _solid.aspect_ratio_mode = 2;
-    //         //         _solid.custome_h = uint16(bytesToUint(_bytes[ai:ai + 2]));
-    //         //         ai += 2;
-    //         //         _solid.custome_h = uint16(bytesToUint(_bytes[ai:ai + 2]));
-    //         //         ai += 2;
-    //         //     }
-    //         // }
-    //         //9
-
-    //         // a = false;
-    //     }
-    //     return _solid;
-    // }
 
     function uint2str(
         uint256 _i
