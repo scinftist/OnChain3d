@@ -7,7 +7,7 @@ import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/
 import "./ABDKMath64x64.sol";
 import "./Trigonometry.sol";
 
-contract PlatonicRebornV2 {
+contract PlatonicRebornV3 {
     uint256 Pi = 3141592653589793238;
     //remove before deploy
     uint256 s = 0;
