@@ -118,7 +118,6 @@ contract PlatonicRebornV3 {
 
     // initialize the default value, set in the constructor
     function inital_array() private {
-        // num2solid[1].name = "Cube";
         defaultSetting.observer = [
             ABDKMath64x64.fromInt(4),
             ABDKMath64x64.fromInt(4),
@@ -784,6 +783,14 @@ contract PlatonicRebornV3 {
         string memory _svg = string(
             abi.encodePacked(svgHead, (renderTokenById(tokenId)), svgTail)
         );
+        string memory _metadataTop = string(
+            abi.encodePacked(
+                '{"description": "interactive 3D objects fully on-chain, rendered by Etherum.", "name": "',
+                num2solid[tokenId % 5].name,
+                " ",
+                uint2str(tokenId / 5)
+            )
+        );
 
         return
             string(
@@ -792,9 +799,10 @@ contract PlatonicRebornV3 {
                     Base64.encode(
                         bytes(
                             abi.encodePacked(
-                                '"image": "data:image/svg+xml;base64,',
+                                _metadataTop,
+                                ' " , "image": "data:image/svg+xml;base64,',
                                 Base64.encode(bytes(_svg)),
-                                '"'
+                                '"}'
                             )
                         )
                     )

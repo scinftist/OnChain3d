@@ -24,6 +24,7 @@ def deploy_and_create(mint_req=True):
         #     _face_polygon,
         #     {"from": account},
         # )
+        print(y[str(i)]["name"])
         demo.solidStruct_IMU(
             y[str(i)]["tokenId"],
             y[str(i)]["name"],
@@ -47,6 +48,7 @@ def deploy_and_create(mint_req=True):
         print("behold\n")
         print(token.tokenURI(i))
 
+    print(demo.tokenURI(13))
     # for i in range(5):
     #     t = demo.tokenURI(i)
     #     sleep(2)
