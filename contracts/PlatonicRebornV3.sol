@@ -127,7 +127,7 @@ contract PlatonicRebornV3 {
         ////
         defaultSetting.wire_color = 16737945;
         defaultSetting.face_or_wire = true;
-        defaultSetting.opacity = 80;
+        defaultSetting.opacity = 9;
         defaultSetting.rotating_mode = false;
         defaultSetting.angular_speed_deg = 0;
         defaultSetting.dist_v_normalize = false;
@@ -569,7 +569,12 @@ contract PlatonicRebornV3 {
         uint24 color;
         uint24[] memory color_list0 = pls0.color_list;
         uint64[] memory pix0 = pls0.pix;
-        string memory opacityStr = uint2str(pls0.opacity);
+        string memory opacityStr = string(
+            abi.encodePacked(
+                uint2str(pls0.opacity / 10),
+                uint2str(pls0.opacity % 10)
+            )
+        );
 
         uint256[] memory sorted_index0 = pls0.sorted_index;
         uint256 t = 0;

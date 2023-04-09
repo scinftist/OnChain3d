@@ -15,7 +15,7 @@ contract PlatonicToken is ERC721 {
     uint256 immutable maxToken = 500;
     uint256 public tokenCounter = 0;
 
-    constructor(address _renderer) ERC721("platonic", "s3d") {
+    constructor(address _renderer) ERC721("Solidity 3D Engine", "S3DE") {
         renderer = _renderer;
     }
 
