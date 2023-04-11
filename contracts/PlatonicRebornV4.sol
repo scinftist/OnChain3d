@@ -7,7 +7,7 @@ import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/
 import "./ABDKMath64x64.sol";
 import "./Trigonometry.sol";
 
-contract PlatonicRebornV3 {
+contract PlatonicRebornV4 {
     uint256 Pi = 3141592653589793238;
     //remove before deploy
     uint256 s = 0;
@@ -91,12 +91,18 @@ contract PlatonicRebornV3 {
         uint24 wire_color;
         uint24[] color_list;
     }
+    struct MinimalSetting {
+        int128[3] observer;
+        uint256 compressed;
+        bytes colorlist;
+    }
+
     // defualt value for token that has not set their generalSettings[tokenId] yet.
     GeneralSetting private defaultSetting;
     // five solid
     mapping(uint256 => solid) num2solid;
     // tokenId -> GeneralSetting
-    mapping(uint256 => GeneralSetting) generalSettings;
+    mapping(uint256 => MinimalSetting) minimalSettings;
     // number of faces of each solid
     uint256[5] private number_of_faces = [4, 6, 8, 12, 20];
 
@@ -159,44 +165,79 @@ contract PlatonicRebornV3 {
         inital_array();
     }
 
+    function minimalToGeneral(
+        MinimalSetting memory _minimal
+    ) internal pure returns (GeneralSetting memory) {
+        uint256 _comp = _minimal.compressed;
+        return
+            GeneralSetting({
+                observer: _minimal.observer,
+                opacity: opacityConverter(_comp),
+                rotating_mode: rotating_modeConverter(_comp),
+                angular_speed_deg: angular_speed_degConverter(_comp),
+                dist_v_normalize: dist_v_normalizeConverter(_comp),
+                face_or_wire: face_or_wiretConverter(_comp),
+                wire_color: wire_colorConverter(_comp),
+                color_list: color_listConverter(_minimal.colorlist)
+            });
+    }
+
     // set setting
-    function setSetting(
+    function setMinimalSetting(
         uint256 id,
         int128[3] calldata _observer,
-        uint8 _opacity,
-        bool _rotating_mode,
-        uint8 _angular_speed_deg,
-        bool _dist_v_normalize,
-        bool _face_or_wire,
-        uint24 _wire_color,
-        uint24[] calldata _color_list
+        uint256 _compressed,
+        bytes calldata _colorlist
     ) public {
         require(
-            _color_list.length <= number_of_faces[id % 5],
+            _colorlist.length == number_of_faces[id % 5] * 3,
             "wrong number of colors"
         );
-        require(_opacity < 100, "opacity should be less than 100");
+        require(
+            opacityConverter(_compressed) < 100,
+            "opacity should be less than 100"
+        );
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
-        require(tempNorm > 55340232221128654848, "too close");
-
-        generalSettings[id] = GeneralSetting({
-            observer: _observer,
-            opacity: _opacity,
-            rotating_mode: _rotating_mode,
-            angular_speed_deg: _angular_speed_deg,
-            dist_v_normalize: _dist_v_normalize,
-            face_or_wire: _face_or_wire,
-            wire_color: _wire_color,
-            color_list: _color_list
-        });
+        require(tempNorm > 5534023222112865484, "too close");
+        minimalSettings[id] = MinimalSetting(
+            _observer,
+            _compressed,
+            _colorlist
+        );
     }
 
     // retrive setting
-    function getSetting(
+    function getGeneralSetting(
         uint256 id
-    ) public view returns (GeneralSetting memory) {
-        return generalSettings[id];
+    ) public view returns (bool, GeneralSetting memory) {
+        bool isDefault;
+        MinimalSetting memory _minimalSetting = minimalSettings[id];
+        if (
+            _minimalSetting.observer[0] == 0 && _minimalSetting.observer[1] == 0
+        ) {
+            isDefault = true;
+            return (isDefault, defaultSetting);
+        } else {
+            isDefault = false;
+            return (isDefault, minimalToGeneral(_minimalSetting));
+        }
+    }
+
+    function getMinimalSetting(
+        uint256 id
+    ) public view returns (bool, MinimalSetting memory) {
+        bool isDefault;
+        MinimalSetting memory _minimalSetting = minimalSettings[id];
+        if (
+            _minimalSetting.observer[0] == 0 && _minimalSetting.observer[1] == 0
+        ) {
+            isDefault = true;
+            return (isDefault, _minimalSetting);
+        } else {
+            isDefault = false;
+            return (isDefault, _minimalSetting);
+        }
     }
 
     // return the cross product of to vector
@@ -651,60 +692,40 @@ contract PlatonicRebornV3 {
     function preSetting(
         uint256 id,
         int128[3] calldata _observer,
-        uint8 _opacity,
-        bool _rotating_mode,
-        uint8 _angular_speed_deg,
-        bool _dist_v_normalize,
-        bool _face_or_wire,
-        uint24 _wire_color,
-        uint24[] calldata _color_list
+        uint256 _compressed,
+        bytes calldata _colorlist
     ) internal view returns (GeneralSetting memory) {
         require(
-            _color_list.length <= number_of_faces[id % 5],
+            _colorlist.length == number_of_faces[id % 5] * 3,
             "wrong number of colors"
         );
-        require(_opacity < 100, "opacity should be less than 100");
+        require(
+            opacityConverter(_compressed) < 100,
+            "opacity should be less than 100"
+        );
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
-        require(tempNorm > 55340232221128654848, "too close");
-        GeneralSetting memory _generalSetting;
-        _generalSetting = GeneralSetting({
-            observer: _observer,
-            opacity: _opacity,
-            rotating_mode: _rotating_mode,
-            angular_speed_deg: _angular_speed_deg,
-            dist_v_normalize: _dist_v_normalize,
-            face_or_wire: _face_or_wire,
-            wire_color: _wire_color,
-            color_list: _color_list
-        });
-        return _generalSetting;
+        require(tempNorm > 5534023222112865484, "too close");
+        return
+            minimalToGeneral(
+                MinimalSetting(_observer, _compressed, _colorlist)
+            );
     }
 
     //for preview the tokenSVG with new setting, see EIP-4883
     function previewTokenById(
         uint256 tid,
         int128[3] calldata _observerP,
-        uint8 _opacityP,
-        bool _rotating_modeP,
-        uint8 _angular_speed_degP,
-        bool _dist_v_normalizeP,
-        bool _face_or_wireP,
-        uint24 _wire_colorP,
-        uint24[] calldata _color_listP
+        uint256 _compressedP,
+        bytes calldata _colorlistP
     ) public view returns (string memory) {
         solid memory _solid = num2solid[tid % 5];
 
         GeneralSetting memory _generalSetting = preSetting(
             tid,
             _observerP,
-            _opacityP,
-            _rotating_modeP,
-            _angular_speed_degP,
-            _dist_v_normalizeP,
-            _face_or_wireP,
-            _wire_colorP,
-            _color_listP
+            _compressedP,
+            _colorlistP
         );
 
         pix_struct memory pxs;
@@ -819,13 +840,11 @@ contract PlatonicRebornV3 {
     function renderTokenById(uint256 tid) public view returns (string memory) {
         solid memory _solid = num2solid[tid % 5];
 
-        GeneralSetting memory _generalSetting = generalSettings[tid];
-        // if setting is not set load defualt setting
-        if (
-            _generalSetting.observer[0] == 0 && _generalSetting.observer[1] == 0
-        ) {
-            _generalSetting = defaultSetting;
-        }
+        // GeneralSetting memory _generalSetting = generalSettings[tid];
+        GeneralSetting memory _generalSetting;
+        bool b;
+        (b, _generalSetting) = getGeneralSetting(tid);
+
         //structs to carry data - to avoid stack too deep
         pix_struct memory pxs;
         deepstruct memory _deepstruct;
@@ -904,6 +923,73 @@ contract PlatonicRebornV3 {
             // rendering svg in wireframe setting
             return svgWireframe(wrs);
         }
+    }
+
+    function opacityConverter(uint256 compressd) internal pure returns (uint8) {
+        unchecked {
+            return uint8((compressd >> 8) & 0xff);
+        }
+    }
+
+    function rotating_modeConverter(
+        uint256 compressd
+    ) internal pure returns (bool) {
+        unchecked {
+            return (compressd & 1) == 1;
+        }
+    }
+
+    function angular_speed_degConverter(
+        uint256 compressd
+    ) internal pure returns (uint16) {
+        unchecked {
+            return uint16((compressd >> 16) & 0xffff);
+        }
+    }
+
+    function dist_v_normalizeConverter(
+        uint256 compressd
+    ) internal pure returns (bool) {
+        unchecked {
+            return (compressd & 2) == 2;
+        }
+    }
+
+    function face_or_wiretConverter(
+        uint256 compressd
+    ) internal pure returns (bool) {
+        unchecked {
+            return (compressd & 4) == 4;
+        }
+    }
+
+    function wire_colorConverter(
+        uint256 compressd
+    ) internal pure returns (uint24) {
+        unchecked {
+            return uint24((compressd >> 32) & 0xffffff);
+        }
+    }
+
+    function color_listConverter(
+        bytes memory colorlist
+    ) public pure returns (uint24[] memory) {
+        uint256 len = colorlist.length;
+        uint24[] memory _colors = new uint24[](len / 3);
+        for (uint256 i; i < len / 3; i++) {
+            unchecked {
+                _colors[i] = uint24(
+                    bytesToUint(
+                        abi.encodePacked(
+                            colorlist[i * 3],
+                            colorlist[i * 3 + 1],
+                            colorlist[i * 3 + 2]
+                        )
+                    )
+                );
+            }
+        }
+        return _colors;
     }
 
     function uint2str(

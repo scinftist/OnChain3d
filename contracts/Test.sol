@@ -13,9 +13,47 @@ contract Test {
         uint24 wire_color;
         uint24[] color_list;
     }
+    struct NewSet {
+        int128[3] observer;
+        string opacity;
+        // bool rotating_mode;
+        uint8 RDF;
+        uint16 angular_speed_deg;
+        // bool dist_v_normalize;
+        // bool face_or_wire;
+        uint24 wire_color;
+        uint24[] color_list;
+    }
+    struct NovoSet {
+        int128[3] observer;
+        string opacity;
+        bool rotating_mode;
+        // uint8 RDF;
+        uint16 angular_speed_deg;
+        bool dist_v_normalize;
+        bool face_or_wire;
+        uint24 wire_color;
+        bytes colors;
+        // uint24[] color_list;
+    }
+    struct DerSet {
+        int128[3] observer;
+        string opacity;
+        uint256 _compressed;
+        // bool rotating_mode;
+        // // uint8 RDF;
+        // uint16 angular_speed_deg;
+        // bool dist_v_normalize;
+        // bool face_or_wire;
+        // uint24 wire_color;
+        bytes colors;
+        // uint24[] color_list;
+    }
 
     GeneralSetting private defaultSetting;
     mapping(uint256 => GeneralSetting) generalSettings;
+    mapping(uint256 => NewSet) NewSets;
+    mapping(uint256 => NovoSet) NovoSets;
 
     constructor() {
         inital_array();
@@ -23,37 +61,36 @@ contract Test {
 
     function inital_array() private {
         // num2solid[1].name = "Cube";
-        defaultSetting.observer = [int128(4) << 64, int128(4) << 64, int128(0)];
-
-        ////
-        defaultSetting.wire_color = 16737945;
-        defaultSetting.face_or_wire = false;
-        defaultSetting.opacity = "80";
-        defaultSetting.rotating_mode = true;
-        defaultSetting.angular_speed_deg = 0;
-        defaultSetting.dist_v_normalize = true;
-        defaultSetting.color_list = [
-            16761600,
-            15158332,
-            3447003,
-            3066993,
-            10181046,
-            15844367,
-            2600544,
-            2719929,
-            9323693,
-            15965202,
-            12597547,
-            1752220,
-            3426654,
-            8359053,
-            1482885,
-            13849600,
-            12436423,
-            2899536,
-            15787660,
-            16101441
-        ];
+        // defaultSetting.observer = [int128(4) << 64, int128(4) << 64, int128(0)];
+        // ////
+        // defaultSetting.wire_color = 16737945;
+        // defaultSetting.face_or_wire = false;
+        // defaultSetting.opacity = "80";
+        // defaultSetting.rotating_mode = true;
+        // defaultSetting.angular_speed_deg = 0;
+        // defaultSetting.dist_v_normalize = true;
+        // defaultSetting.color_list = [
+        //     16761600,
+        //     15158332,
+        //     3447003,
+        //     3066993,
+        //     10181046,
+        //     15844367,
+        //     2600544,
+        //     2719929,
+        //     9323693,
+        //     15965202,
+        //     12597547,
+        //     1752220,
+        //     3426654,
+        //     8359053,
+        //     1482885,
+        //     13849600,
+        //     12436423,
+        //     2899536,
+        //     15787660,
+        //     16101441
+        // ];
     }
 
     function getSetting(
@@ -80,7 +117,7 @@ contract Test {
         uint24 _wire_color,
         uint24[] calldata _color_list
     ) public {
-        require(_color_list.length == 24);
+        // require(_color_list.length == 24);
         generalSettings[id] = GeneralSetting({
             observer: _observer,
             opacity: uint2str(_opacity),
@@ -88,6 +125,56 @@ contract Test {
             angular_speed_deg: _angular_speed_deg,
             dist_v_normalize: _dist_v_normalize,
             face_or_wire: _face_or_wire,
+            wire_color: _wire_color,
+            color_list: _color_list
+        });
+    }
+
+    function novoSetSetting(
+        uint256 id,
+        int128[3] calldata _observer,
+        uint8 _opacity,
+        bool _rotating_mode,
+        uint8 _angular_speed_deg,
+        bool _dist_v_normalize,
+        bool _face_or_wire,
+        uint24 _wire_color,
+        bytes calldata _colors
+    ) public {
+        // require(_color_list.length == 24);
+        NovoSets[id] = NovoSet({
+            observer: _observer,
+            opacity: uint2str(_opacity),
+            rotating_mode: _rotating_mode,
+            angular_speed_deg: _angular_speed_deg,
+            dist_v_normalize: _dist_v_normalize,
+            face_or_wire: _face_or_wire,
+            wire_color: _wire_color,
+            colors: _colors
+        });
+    }
+
+    function newSetSetting(
+        uint256 id,
+        int128[3] calldata _observer,
+        uint8 _opacity,
+        // bool _rotating_mode,
+        uint8 _RDF,
+        uint8 _angular_speed_deg,
+        // bool _dist_v_normalize,
+        // bool _face_or_wire,
+        uint24 _wire_color,
+        uint24[] calldata _color_list
+    ) public {
+        // require(_color_list.length == 24);
+        NewSets[id] = NewSet({
+            observer: _observer,
+            opacity: uint2str(_opacity),
+            // rotating_mode: _rotating_mode,
+            RDF: _RDF,
+            angular_speed_deg: _angular_speed_deg,
+            // dist_v_normalize: _dist_v_normalize,
+            // face_or_wire: _face_or_wire,
             wire_color: _wire_color,
             color_list: _color_list
         });
