@@ -64,7 +64,6 @@ contract PlatonicRebornV4 {
         uint24[] color_list;
         uint8 opacity;
         uint8 polygon;
-        // string headstring;
     }
     // struct to carry data inside the {scaledPoints}
     struct pix_struct {
@@ -199,7 +198,7 @@ contract PlatonicRebornV4 {
         );
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
-        require(tempNorm > 5534023222112865484, "too close");
+        require(tempNorm > 55340232221128654848, "too close");
         minimalSettings[id] = MinimalSetting(
             _observer,
             _compressed,
@@ -316,29 +315,37 @@ contract PlatonicRebornV4 {
     function relative_observer(
         int128[3] memory observer0,
         int128[3] memory center0,
-        uint256 angle_deg
+        uint256 angle_deg,
+        bool rotating_mode
     ) internal view returns (int128[3] memory) {
         int128[3] memory d = [
             ABDKMath64x64.fromInt(0),
             ABDKMath64x64.fromInt(0),
             ABDKMath64x64.fromInt(0)
         ];
-
-        uint256 tetha_rad = ((block.timestamp / 900) * (angle_deg % 360) * Pi) /
-            180;
-        int128 si = ABDKMath64x64.div(
-            ABDKMath64x64.fromInt(Trigonometry.sin(tetha_rad)),
-            ABDKMath64x64.fromInt(1e18)
-        );
-        int128 cosi = ABDKMath64x64.div(
-            ABDKMath64x64.fromInt(Trigonometry.cos(tetha_rad)),
-            ABDKMath64x64.fromInt(1e18)
-        );
-        d = [
-            dot([cosi, -si, 0], observer0),
-            dot([si, cosi, 0], observer0),
-            observer0[2]
-        ];
+        // uint256 _ang = 0;
+        if (rotating_mode) {
+            // _ang = angle_deg;
+            uint256 tetha_rad = ((block.timestamp / 900) *
+                (angle_deg % 360) *
+                Pi) / 180;
+            int128 si = ABDKMath64x64.div(
+                ABDKMath64x64.fromInt(Trigonometry.sin(tetha_rad)),
+                ABDKMath64x64.fromInt(1e18)
+            );
+            int128 cosi = ABDKMath64x64.div(
+                ABDKMath64x64.fromInt(Trigonometry.cos(tetha_rad)),
+                ABDKMath64x64.fromInt(1e18)
+            );
+            d = [
+                dot([cosi, -si, 0], observer0),
+                dot([si, cosi, 0], observer0),
+                observer0[2]
+            ];
+        } else {
+            // _ang = 0;
+            d = observer0;
+        }
 
         d[0] = ABDKMath64x64.add(d[0], center0[0]);
         d[1] = ABDKMath64x64.add(d[1], center0[1]);
@@ -705,7 +712,7 @@ contract PlatonicRebornV4 {
         );
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
-        require(tempNorm > 5534023222112865484, "too close");
+        require(tempNorm > 55340232221128654848, "too close");
         return
             minimalToGeneral(
                 MinimalSetting(_observer, _compressed, _colorlist)
@@ -738,7 +745,8 @@ contract PlatonicRebornV4 {
         _observer = relative_observer(
             _observer,
             _deepstruct._center,
-            _generalSetting.angular_speed_deg
+            _generalSetting.angular_speed_deg,
+            _generalSetting.rotating_mode
         );
         _deepstruct._plane_normal = plane_normal_vector(
             _observer,
@@ -806,6 +814,9 @@ contract PlatonicRebornV4 {
 
     //safe cast?
     function tokenURI(uint256 tokenId) public view returns (string memory) {
+        // string memory _newHead = headConverter(
+        //     minimalSettings[tokenId].compressed
+        // );
         string memory _svg = string(
             abi.encodePacked(svgHead, (renderTokenById(tokenId)), svgTail)
         );
@@ -855,7 +866,8 @@ contract PlatonicRebornV4 {
         _observer = relative_observer(
             _observer,
             _deepstruct._center,
-            _generalSetting.angular_speed_deg
+            _generalSetting.angular_speed_deg,
+            _generalSetting.rotating_mode
         );
         // projection plane normal vector
         _deepstruct._plane_normal = plane_normal_vector(
@@ -970,6 +982,24 @@ contract PlatonicRebornV4 {
             return uint24((compressd >> 32) & 0xffffff);
         }
     }
+
+    // function headConverter(
+    //     uint256 compressd
+    // ) internal pure returns (string memory) {
+    //     string memory _headColor;
+    //     unchecked {
+    //         _headColor = toHexString(uint24((compressd >> 56) & 0xffffff), 3);
+    //     }
+    //     return
+    //         string(
+    //             abi.encodePacked(
+    //                 '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="#',
+    //                 _headColor,
+    //                 '" xmlns="http://www.w3.org/2000/svg">'
+    //             )
+    //         );
+    //     // '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="white" xmlns="http://www.w3.org/2000/svg">';
+    // }
 
     function color_listConverter(
         bytes memory colorlist

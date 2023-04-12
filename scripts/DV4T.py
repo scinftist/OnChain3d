@@ -13,17 +13,8 @@ def deploy_and_create(mint_req=True):
         #     q = f.read()
         y = json.load(ss)
 
-    for k in range(5):
+    for k in range(1):
         i = k
-        # demo.solidStruct_IMU(
-        #     0,
-        #     _name,
-        #     _vertices,
-        #     _adjacency_matrix,
-        #     _face_list,
-        #     _face_polygon,
-        #     {"from": account},
-        # )
         print(y[str(i)]["name"])
         demo.solidStruct_IMU(
             y[str(i)]["tokenId"],
@@ -55,7 +46,7 @@ def deploy_and_create(mint_req=True):
     #     print(t)
 
     id = 0
-    o = [2 ** 64, 2 ** 64, 0]
+    o = [2 ** 64, 4 * 2 ** 64, 0]
     op = 99
     rm = False
     asd = 7
@@ -74,28 +65,32 @@ def deploy_and_create(mint_req=True):
     # )
     print(demo.getGeneralSetting(0))
     sleep(2)
-    demo.setMinimalSetting(4, o, _comp, bytes.fromhex(cl2[0:120]), {"from": account})
+    print(demo.renderTokenById(0))
+    sleep(2)
+    print(demo.tokenURI(0))
+    sleep(2)
+    # demo.setMinimalSetting(4, o, _comp, bytes.fromhex(cl2[0:120]), {"from": account})
 
-    sleep(2)
-    print("444444444444")
-    print(demo.getGeneralSetting(4))
-    sleep(2)
-    print("KKKK")
-    print(demo.previewTokenById(1, o, _comp, bytes.fromhex(cl2[0:36])))
-    sleep(2)
+    # sleep(2)
+    # print("444444444444")
+    # print(demo.getGeneralSetting(4))
+    # sleep(2)
+    # print("KKKK")
+    # print(demo.previewTokenById(1, o, _comp, bytes.fromhex(cl2[0:36])))
+    # sleep(2)
 
-    demo.setMinimalSetting(id, o, _comp, bytes.fromhex(cl2[0:24]), {"from": account})
+    # demo.setMinimalSetting(id, o, _comp, bytes.fromhex(cl2[0:24]), {"from": account})
 
-    # demo.novoSetSetting(
-    #     id, o, op, rm, asd, dvn, fow, wc, bytes.fromhex(cl2), {"from": account}
-    # )
-    sleep(2)
-    demo.setMinimalSetting(4, o, _comp, bytes.fromhex(cl2[0:120]), {"from": account})
-    sleep(2)
-    for i in range(5):
-        print("behold\n" + str(i + 1))
-        print(demo.renderTokenById(i + 1))
-        sleep(2)
+    # # demo.novoSetSetting(
+    # #     id, o, op, rm, asd, dvn, fow, wc, bytes.fromhex(cl2), {"from": account}
+    # # )
+    # sleep(2)
+    # demo.setMinimalSetting(4, o, _comp, bytes.fromhex(cl2[0:120]), {"from": account})
+    # sleep(2)
+    # for i in range(5):
+    #     print("behold\n" + str(i + 1))
+    #     print(demo.renderTokenById(i + 1))
+    #     sleep(2)
 
 
 def main():
