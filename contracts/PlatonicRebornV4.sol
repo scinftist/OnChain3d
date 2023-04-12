@@ -15,7 +15,7 @@ contract PlatonicRebornV4 {
     int128 public dist = ABDKMath64x64.fromInt(1);
     //// svg header
     string private svgHead =
-        '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="white" xmlns="http://www.w3.org/2000/svg">';
+        '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
     string private svgTail = "</svg>";
     // parts for rendering polygon svg
 
@@ -54,7 +54,7 @@ contract PlatonicRebornV4 {
         bool[] adj;
         uint24 wire_color;
         uint256 lenVertices;
-        string headstring;
+        uint24 back_color;
     }
     // struct to carry data along the the {svgPolygon}  to  cumpute polygon setting- too many stack too deep
     struct poly_struct {
@@ -64,6 +64,7 @@ contract PlatonicRebornV4 {
         uint24[] color_list;
         uint8 opacity;
         uint8 polygon;
+        uint24 back_color;
     }
     // struct to carry data inside the {scaledPoints}
     struct pix_struct {
@@ -87,6 +88,7 @@ contract PlatonicRebornV4 {
         uint16 angular_speed_deg;
         bool dist_v_normalize;
         bool face_or_wire;
+        uint24 back_color;
         uint24 wire_color;
         uint24[] color_list;
     }
@@ -158,6 +160,7 @@ contract PlatonicRebornV4 {
             15787660,
             16101441
         ];
+        defaultSetting.back_color = 0;
     }
 
     constructor() {
@@ -176,6 +179,7 @@ contract PlatonicRebornV4 {
                 angular_speed_deg: angular_speed_degConverter(_comp),
                 dist_v_normalize: dist_v_normalizeConverter(_comp),
                 face_or_wire: face_or_wiretConverter(_comp),
+                back_color: back_colorConverter(_comp),
                 wire_color: wire_colorConverter(_comp),
                 color_list: color_listConverter(_minimal.colorlist)
             });
@@ -610,7 +614,14 @@ contract PlatonicRebornV4 {
     function svgPolygon(
         poly_struct memory pls0
     ) public view returns (string memory) {
-        string memory a = "";
+        // uint
+        string memory a = string(
+            abi.encodePacked(
+                '<rect x="0" y="0" width="1000" height="1000" fill="#',
+                toHexString(pls0.back_color, 3),
+                '" />'
+            )
+        );
         uint8[] memory face_list0 = pls0.face_list;
         uint8 _polygon = pls0.polygon;
         uint256 face_list_length0 = face_list0.length / _polygon;
@@ -658,7 +669,13 @@ contract PlatonicRebornV4 {
         wire_struct memory wrs0
     ) public view returns (string memory) {
         uint256 vLen = wrs0.lenVertices;
-        string memory a = "";
+        string memory a = string(
+            abi.encodePacked(
+                '<rect x="0" y="0" width="1000" height="1000" fill="#',
+                toHexString(wrs0.back_color, 3),
+                '" />'
+            )
+        );
 
         for (uint256 i = 1; i < vLen; i++) {
             for (uint256 j; j < i; j++) {
@@ -796,6 +813,7 @@ contract PlatonicRebornV4 {
             pls.sorted_index = _deepstruct._face_index;
             pls.opacity = _generalSetting.opacity;
             pls.polygon = _solid.face_polygon;
+            pls.back_color = _generalSetting.back_color;
 
             // rendering svg in polygon setting
             return svgPolygon(pls);
@@ -806,6 +824,7 @@ contract PlatonicRebornV4 {
             wrs.wire_color = _generalSetting.wire_color;
 
             wrs.lenVertices = _solid.vertices.length;
+            wrs.back_color = _generalSetting.back_color;
 
             // wrs.headstring = "";
             return svgWireframe(wrs);
@@ -814,9 +833,6 @@ contract PlatonicRebornV4 {
 
     //safe cast?
     function tokenURI(uint256 tokenId) public view returns (string memory) {
-        // string memory _newHead = headConverter(
-        //     minimalSettings[tokenId].compressed
-        // );
         string memory _svg = string(
             abi.encodePacked(svgHead, (renderTokenById(tokenId)), svgTail)
         );
@@ -921,6 +937,7 @@ contract PlatonicRebornV4 {
             pls.sorted_index = _deepstruct._face_index;
             pls.opacity = _generalSetting.opacity;
             pls.polygon = _solid.face_polygon;
+            pls.back_color = _generalSetting.back_color;
 
             // rendering svg in polygon setting
             return svgPolygon(pls);
@@ -931,7 +948,7 @@ contract PlatonicRebornV4 {
             wrs.wire_color = _generalSetting.wire_color;
 
             wrs.lenVertices = _solid.vertices.length;
-
+            wrs.back_color = _generalSetting.back_color;
             // rendering svg in wireframe setting
             return svgWireframe(wrs);
         }
@@ -983,23 +1000,13 @@ contract PlatonicRebornV4 {
         }
     }
 
-    // function headConverter(
-    //     uint256 compressd
-    // ) internal pure returns (string memory) {
-    //     string memory _headColor;
-    //     unchecked {
-    //         _headColor = toHexString(uint24((compressd >> 56) & 0xffffff), 3);
-    //     }
-    //     return
-    //         string(
-    //             abi.encodePacked(
-    //                 '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="#',
-    //                 _headColor,
-    //                 '" xmlns="http://www.w3.org/2000/svg">'
-    //             )
-    //         );
-    //     // '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="white" xmlns="http://www.w3.org/2000/svg">';
-    // }
+    function back_colorConverter(
+        uint256 compressd
+    ) internal pure returns (uint24) {
+        unchecked {
+            return uint24((compressd >> 56) & 0xffffff);
+        }
+    }
 
     function color_listConverter(
         bytes memory colorlist

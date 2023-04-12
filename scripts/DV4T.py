@@ -55,7 +55,7 @@ def deploy_and_create(mint_req=True):
     wc = 15158332
     cl = [16761600, 15158332, 3447003, 3066993] * 5
     cl2 = "F5B041F0E68C" * 10
-    _comp = 7 + 256 * op + 2 ** 16 * asd + 2 ** 32 * wc
+    _comp = 7 + 256 * op + 2 ** 16 * asd + 2 ** 32 * wc + 2 ** 56 * 255
     print(demo.getGeneralSetting(0))
     sleep(2)
     demo.setMinimalSetting(id, o, _comp, bytes.fromhex(cl2[0:24]), {"from": account})

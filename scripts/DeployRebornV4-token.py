@@ -55,7 +55,7 @@ def deploy_and_create(mint_req=True):
     #     print(t)
 
     id = 0
-    o = [2 ** 64, 2 ** 64, 0]
+    o = [2 ** 64, 4 * 2 ** 64, 0]
     op = 99
     rm = False
     asd = 7
@@ -93,8 +93,8 @@ def deploy_and_create(mint_req=True):
     demo.setMinimalSetting(4, o, _comp, bytes.fromhex(cl2[0:120]), {"from": account})
     sleep(2)
     for i in range(5):
-        print("behold\n" + str(i + 1))
-        print(demo.renderTokenById(i + 1))
+        print("behold\n" + str(i))
+        print(demo.renderTokenById(i))
         sleep(2)
 
 
