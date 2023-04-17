@@ -8,31 +8,31 @@ import "./ABDKMath64x64.sol";
 import "./Trigonometry.sol";
 
 contract PlatonicRebornV4 {
-    uint256 Pi = 3141592653589793238;
+    uint256 constant Pi = 3141592653589793238;
     //remove before deploy
     uint256 s = 0;
     //observer distance to projection plane
     int128 public dist = ABDKMath64x64.fromInt(1);
     //// svg header
-    string private svgHead =
+    string private constant svgHead =
         '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
-    string private svgTail = "</svg>";
+    string private constant svgTail = "</svg>";
     // parts for rendering polygon svg
 
-    string private p1 = '<polygon points="';
-    string private p2 = '" fill="#';
+    string private constant p1 = '<polygon points="';
+    string private constant p2 = '" fill="#';
 
-    string private p3 = '" opacity="0.';
-    string private p4 = '" />';
+    string private constant p3 = '" opacity="0.';
+    string private constant p4 = '" />';
 
     ////
     // parts for rendering wireframe svg
-    string private l1 = '<line x1="';
-    string private l2 = '" y1="';
-    string private l3 = '" x2="';
-    string private l4 = '" y2="';
-    string private l5 = '" stroke="#';
-    string private l6 = '" stroke-width="2"/>';
+    string private constant l1 = '<line x1="';
+    string private constant l2 = '" y1="';
+    string private constant l3 = '" x2="';
+    string private constant l4 = '" y2="';
+    string private constant l5 = '" stroke="#';
+    string private constant l6 = '" stroke-width="2"/>';
 
     /// struct to carry data along the the {renderTokenById} and {previewTokenById} - too many stack too deep
     struct deepstruct {
