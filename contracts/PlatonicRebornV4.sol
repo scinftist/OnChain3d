@@ -613,7 +613,7 @@ contract PlatonicRebornV4 {
     // rendering token SVG with the polygon setting (face)
     function svgPolygon(
         poly_struct memory pls0
-    ) public view returns (string memory) {
+    ) internal pure returns (string memory) {
         // uint
         string memory a = string(
             abi.encodePacked(
@@ -667,7 +667,7 @@ contract PlatonicRebornV4 {
     // rendering token with wireframe (wire) setting
     function svgWireframe(
         wire_struct memory wrs0
-    ) public view returns (string memory) {
+    ) internal pure returns (string memory) {
         uint256 vLen = wrs0.lenVertices;
         string memory a = string(
             abi.encodePacked(
