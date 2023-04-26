@@ -7,7 +7,7 @@ import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/
 import "./ABDKMath64x64.sol";
 import "./Trigonometry.sol";
 
-contract PlatonicRebornV43 {
+contract PlatonicRebornV44 {
     uint256 constant Pi = 3141592653589793238;
     //remove before deploy
     uint256 s = 0;
@@ -64,7 +64,6 @@ contract PlatonicRebornV43 {
         uint24[] color_list;
         uint8 opacity;
         uint8 polygon;
-        uint24 wire_color;
         uint24 back_color;
     }
     // struct to carry data inside the {scaledPoints}
@@ -620,7 +619,7 @@ contract PlatonicRebornV43 {
             abi.encodePacked(
                 '<rect x="0" y="0" width="1000" height="1000" fill="#',
                 toHexString(pls0.back_color, 3),
-                '" /><g stroke="#000" stroke-width="1.42" stroke-opacity="0.69">'
+                '" />'
             )
         );
         uint8[] memory face_list0 = pls0.face_list;
@@ -662,7 +661,7 @@ contract PlatonicRebornV43 {
             a = string(abi.encodePacked(a, opacityStr, p4));
         }
 
-        return string(abi.encodePacked(a, "</g>"));
+        return a;
     }
 
     // rendering token with wireframe (wire) setting
