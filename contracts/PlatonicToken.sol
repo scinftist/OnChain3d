@@ -11,12 +11,15 @@ interface iMetadata {
 }
 
 contract PlatonicToken is ERC721 {
-    address public immutable renderer;
+    // address public immutable renderer;
     uint256 immutable maxToken = 500;
     uint256 public tokenCounter = 0;
+    iMetadata private renderer0;
 
-    constructor(address _renderer) ERC721("Solidity 3D Engine", "S3DE") {
-        renderer = _renderer;
+    constructor() ERC721("Solidity 3D Engine", "S3DE") {}
+
+    function setMetadataRenderer(iMetadata _renderer0) public {
+        renderer0 = _renderer0;
     }
 
     function mintToken() public {
@@ -29,6 +32,6 @@ contract PlatonicToken is ERC721 {
         uint256 tokenId
     ) public view virtual override returns (string memory) {
         ERC721._requireMinted(tokenId);
-        return iMetadata(renderer).tokenURI(tokenId);
+        return renderer0.tokenURI(tokenId);
     }
 }
