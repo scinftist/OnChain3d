@@ -1,3 +1,4 @@
+//SPDX-License-Identifier: MIT
 /**
  * @notice Solidity library offering basic trigonometry functions where inputs and outputs are
  * integers. Inputs are specified in radians scaled by 1e18, and similarly outputs are scaled by 1e18.

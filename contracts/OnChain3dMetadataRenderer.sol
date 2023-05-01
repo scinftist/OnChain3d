@@ -1112,7 +1112,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         return _contractURI;
     }
 
-    function initializeWithData(bytes memory initData) public {
+    function initializeWithData(bytes memory initData) public pure {
         revert("not callable");
     }
 }
