@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Base64} from "./utils/Base64.sol";
 import "./access/Ownable.sol";
 
-import {ABDKMath64x64} from "./lib/ABDKMath64x64.sol";
+import "./lib/ABDKMath64x64.sol";
 import "./lib/Trigonometry.sol";
 
 import "./interfaces/IMetadataRenderer.sol";
