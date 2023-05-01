@@ -1,6 +1,6 @@
 from sre_constants import SUCCESS
 from scripts.helpful_scripts import get_account
-from brownie import accounts, config, network, PlatonicRebornV44, PlatonicToken
+from brownie import accounts, config, network, OnChain3d, PlatonicToken
 import json
 from time import sleep
 
@@ -9,7 +9,7 @@ def deploy_and_create(mint_req=True):
     test_counter = 0
     pass_counter = 0
     account = get_account()
-    demo = PlatonicRebornV44.deploy({"from": account})
+    demo = OnChain3d.deploy({"from": account})
     #############
     with open("./solid-json.json", "r") as ss:
         #     q = f.read()

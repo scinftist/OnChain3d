@@ -10,7 +10,7 @@ interface iMetadata {
     function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
-contract PlatonicToken is ERC721 {
+contract OnChain3dTokenPlaceHolder is ERC721 {
     // address public immutable renderer;
     uint256 immutable maxToken = 500;
     uint256 public tokenCounter = 0;
@@ -23,7 +23,7 @@ contract PlatonicToken is ERC721 {
     }
 
     function mintToken() public {
-        require(tokenCounter < 1000, "max token reached");
+        require(tokenCounter < maxToken, "max token reached");
         ERC721._safeMint(msg.sender, tokenCounter);
         tokenCounter++;
     }

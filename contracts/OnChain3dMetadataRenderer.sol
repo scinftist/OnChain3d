@@ -3,19 +3,26 @@
 pragma solidity ^0.8.0;
 
 import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts//access/Ownable.sol";
 
-import "./ABDKMath64x64.sol";
-import "./Trigonometry.sol";
+import {ABDKMath64x64} from "./lib/ABDKMath64x64.sol";
+import "./lib/Trigonometry.sol";
+// contracts/utils/ABDKMath64x64.sol
+import "../interfaces/IMetadataRenderer.sol";
+import "../interfaces/IERC721mini.sol";
 
-contract PlatonicRebornV43 {
+///home/pink/Desktop/platonic-reborn/contracts/utils/ABDKMath64x64.sol
+contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
+    IERC721mini public targetContract;
+    string private _contractURI;
+
+    ///
     uint256 constant Pi = 3141592653589793238;
-    //remove before deploy
-    uint256 s = 0;
     //observer distance to projection plane
     int128 public dist = ABDKMath64x64.fromInt(1);
     //// svg header
     string private constant svgHead =
-        '<svg width="%100" height="%100" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
+        '<svg width="1000" height="1000" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
     string private constant svgTail = "</svg>";
     // parts for rendering polygon svg
 
@@ -64,7 +71,6 @@ contract PlatonicRebornV43 {
         uint24[] color_list;
         uint8 opacity;
         uint8 polygon;
-        uint24 wire_color;
         uint24 back_color;
     }
     // struct to carry data inside the {scaledPoints}
@@ -108,36 +114,20 @@ contract PlatonicRebornV43 {
     // number of faces of each solid
     uint256[5] private number_of_faces = [4, 6, 8, 12, 20];
 
-    // uploading data of the 5 platonic solid
-    function solidStruct_IMU(
-        uint8 _tokenId,
-        string calldata _name,
-        int128[3][] calldata _vertices,
-        bool[] calldata _adjacency_matrix,
-        uint8[] calldata _face_list,
-        uint8 _face_polygon
-    ) external {
-        num2solid[_tokenId].name = _name;
-        num2solid[_tokenId].vertices = _vertices;
-        num2solid[_tokenId].adjacency_matrix = _adjacency_matrix;
-        num2solid[_tokenId].face_list = _face_list;
-        num2solid[_tokenId].face_polygon = _face_polygon;
-    }
-
     // initialize the default value, set in the constructor
     function inital_array() private {
         defaultSetting.observer = [
             ABDKMath64x64.fromInt(4),
             ABDKMath64x64.fromInt(4),
-            ABDKMath64x64.fromInt(-8)
+            ABDKMath64x64.fromInt(1)
         ];
 
         ////
         defaultSetting.wire_color = 16737945;
         defaultSetting.face_or_wire = true;
-        defaultSetting.opacity = 9;
-        defaultSetting.rotating_mode = false;
-        defaultSetting.angular_speed_deg = 0;
+        defaultSetting.opacity = 69;
+        defaultSetting.rotating_mode = true;
+        defaultSetting.angular_speed_deg = 31;
         defaultSetting.dist_v_normalize = false;
         defaultSetting.color_list = [
             16761600,
@@ -168,6 +158,34 @@ contract PlatonicRebornV43 {
         inital_array();
     }
 
+    function setTargetAddress(IERC721mini _targetAddress) public onlyOwner {
+        targetContract = _targetAddress;
+    }
+
+    function setContractURI(string memory _uri) public onlyOwner {
+        _contractURI = _uri;
+    }
+
+    // uploading data of the 5 platonic solid
+    function solidStruct_IMU(
+        uint8 _tokenId,
+        string calldata _name,
+        int128[3][] calldata _vertices,
+        bool[] calldata _adjacency_matrix,
+        uint8[] calldata _face_list,
+        uint8 _face_polygon
+    ) public onlyOwner {
+        num2solid[_tokenId].name = _name;
+        num2solid[_tokenId].vertices = _vertices;
+        num2solid[_tokenId].adjacency_matrix = _adjacency_matrix;
+        num2solid[_tokenId].face_list = _face_list;
+        num2solid[_tokenId].face_polygon = _face_polygon;
+    }
+
+    function getSolid(uint256 _solidNumber) public view returns (solid memory) {
+        return num2solid[_solidNumber];
+    }
+
     function minimalToGeneral(
         MinimalSetting memory _minimal
     ) internal pure returns (GeneralSetting memory) {
@@ -193,6 +211,10 @@ contract PlatonicRebornV43 {
         uint256 _compressed,
         bytes calldata _colorlist
     ) public {
+        require(
+            targetContract.ownerOf(id) == msg.sender,
+            "You must own the token"
+        );
         require(
             _colorlist.length == number_of_faces[id % 5] * 3,
             "wrong number of colors"
@@ -709,7 +731,6 @@ contract PlatonicRebornV43 {
             }
         }
 
-        // a = string(abi.encodePacked(a, svgTail));
         return a;
     }
 
@@ -842,9 +863,14 @@ contract PlatonicRebornV43 {
                 '{"description": "interactive 3D objects fully on-chain, rendered by Etherum.", "name": "',
                 num2solid[tokenId % 5].name,
                 " ",
-                uint2str(tokenId / 5)
+                uint2str(tokenId / 5),
+                '" , "polyhydron" : "',
+                num2solid[tokenId % 5].name
             )
         );
+        // '" , "polyhydron" : ",'
+        // num2solid[tokenId % 5].name,
+        //
 
         return
             string(
@@ -1082,11 +1108,11 @@ contract PlatonicRebornV43 {
         return string(buffer);
     }
 
-    ///
+    function contractURI() public view returns (string memory) {
+        return _contractURI;
+    }
 
-    ////
-    ///
-    function sss() public {
-        s += 1;
+    function initializeWithData(bytes memory initData) public {
+        revert("not callable");
     }
 }
