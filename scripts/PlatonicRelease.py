@@ -1,6 +1,12 @@
 from sre_constants import SUCCESS
 from scripts.helpful_scripts import get_account
-from brownie import accounts, config, network, OnChain3d, PlatonicToken
+from brownie import (
+    accounts,
+    config,
+    network,
+    OnChain3dMetadataRenderer,
+    OnChain3dTokenPlaceHolder,
+)
 import json
 from time import sleep
 
@@ -9,9 +15,11 @@ def deploy_and_create(mint_req=True):
     test_counter = 0
     pass_counter = 0
     account = get_account()
-    demo = OnChain3d.deploy({"from": account})
+    demo = OnChain3dMetadataRenderer.deploy({"from": account})
     #############
-    with open("./solid-json.json", "r") as ss:
+    # with open("./solid-json.json", "r") as ss:
+    with open("./scripts/PlatonicSolids.json", "r") as ss:
+        # PlatonicSolids.json
         #     q = f.read()
         y = json.load(ss)
 
@@ -32,7 +40,7 @@ def deploy_and_create(mint_req=True):
 
         # print(t)
 
-    token = PlatonicToken.deploy({"from": account})
+    token = OnChain3dTokenPlaceHolder.deploy({"from": account})
     token.setMetadataRenderer(demo.address, {"from": account})
     sleep(1)
     demo.setTargetAddress(token.address, {"from": account})
@@ -44,16 +52,15 @@ def deploy_and_create(mint_req=True):
     except:
         print("owners test passed")
         pass_counter += 1
-    # token.setMetadataRenderer
+
     sleep(0.1)
     for i in range(5):
         token.mintToken({"from": accounts[i]})
 
     for i in range(5):
-        # print("behold\n")
+
         token.tokenURI(i)
 
-    # print(demo.tokenURI(13))
     test_counter += 1
     try:
         token.tokenURI(5)
@@ -65,12 +72,11 @@ def deploy_and_create(mint_req=True):
     id = 0
     o = [2 ** 64, 4 * 2 ** 64, 0]
     op = 99
-    rm = False
+
     asd = 7
-    dvn = False
-    fow = False
+
     wc = 15158332
-    cl = [16761600, 15158332, 3447003, 3066993] * 5
+
     cl2 = "F5B041F0E68C" * 10
     _comp = 7 + 256 * op + 2 ** 16 * asd + 2 ** 32 * wc + 2 ** 56 * 255
     print(demo.getGeneralSetting(0))
@@ -99,10 +105,8 @@ def deploy_and_create(mint_req=True):
 
     print(pass_counter, "/", test_counter)
 
-    # for i in range(5):
-    #     t = demo.tokenURI(i)
-    #     sleep(2)
-    #     print(t)
+    sleep(2)
+    print("done")
 
 
 def main():

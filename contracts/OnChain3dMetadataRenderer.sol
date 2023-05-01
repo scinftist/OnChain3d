@@ -7,9 +7,9 @@ import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts//access/Ownable.sol"
 
 import {ABDKMath64x64} from "./lib/ABDKMath64x64.sol";
 import "./lib/Trigonometry.sol";
-// contracts/utils/ABDKMath64x64.sol
-import "../interfaces/IMetadataRenderer.sol";
-import "../interfaces/IERC721mini.sol";
+
+import "./interfaces/IMetadataRenderer.sol";
+import "./interfaces/IERC721mini.sol";
 
 ///home/pink/Desktop/platonic-reborn/contracts/utils/ABDKMath64x64.sol
 contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
