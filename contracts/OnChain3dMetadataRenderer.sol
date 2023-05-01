@@ -15,7 +15,6 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
     IERC721mini public targetContract;
     string private _contractURI;
 
-    ///
     uint256 constant Pi = 3141592653589793238;
     //observer distance to projection plane
     int128 public dist = ABDKMath64x64.fromInt(1);
@@ -185,6 +184,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         return num2solid[_solidNumber];
     }
 
+    // a  function to unpack the packed data of minimal setting to general setting
     function minimalToGeneral(
         MinimalSetting memory _minimal
     ) internal pure returns (GeneralSetting memory) {
@@ -210,6 +210,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         uint256 _compressed,
         bytes calldata _colorlist
     ) public {
+        // this function is only callable by token Owner
         require(
             targetContract.ownerOf(id) == msg.sender,
             "You must own the token"
