@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import {Base64} from "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts/utils/Base64.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.7.0/contracts//access/Ownable.sol";
+import {Base64} from "./utils/Base64.sol";
+import "./access/Ownable.sol";
 
 import {ABDKMath64x64} from "./lib/ABDKMath64x64.sol";
 import "./lib/Trigonometry.sol";
@@ -11,7 +11,6 @@ import "./lib/Trigonometry.sol";
 import "./interfaces/IMetadataRenderer.sol";
 import "./interfaces/IERC721mini.sol";
 
-///home/pink/Desktop/platonic-reborn/contracts/utils/ABDKMath64x64.sol
 contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
     IERC721mini public targetContract;
     string private _contractURI;
