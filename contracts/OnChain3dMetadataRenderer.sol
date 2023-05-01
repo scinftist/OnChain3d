@@ -11,6 +11,16 @@ import "./lib/Trigonometry.sol";
 import "./interfaces/IMetadataRenderer.sol";
 import "./interfaces/IERC721mini.sol";
 
+/**
+ * @dev the following contract is a thought experiment of first 3d graphics rendering by Etherum,
+ * for this experiment we nominateted platonic solids to render becuase they are a good benchmark
+ * for validating rendering algorithm due to high degree of symetry, this implemntation is based on
+ * painters algorithm and also have the capability to render in polygon mode and wireframe mode,
+ * these objects are interactive and token owners can change the observer position of the rendering scene,
+ * or change the polygon colors of their token, and someothere things.
+ * for more info please https://OnChain3d.xyz
+ */
+
 contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
     IERC721mini public targetContract;
     string private _contractURI;
@@ -266,7 +276,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         }
     }
 
-    // return the cross product of to vector
+    // return the cross product of two vector
     function cross(
         int128[3] memory a,
         int128[3] memory b
@@ -287,7 +297,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         return d;
     }
 
-    // return the dot product of to vector
+    // return the dot product of two vector
     function dot(
         int128[3] memory a,
         int128[3] memory b
@@ -350,9 +360,8 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
             ABDKMath64x64.fromInt(0),
             ABDKMath64x64.fromInt(0)
         ];
-        // uint256 _ang = 0;
+
         if (rotating_mode) {
-            // _ang = angle_deg;
             uint256 tetha_rad = ((block.timestamp / 900) *
                 (angle_deg % 360) *
                 Pi) / 180;
@@ -370,7 +379,6 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
                 observer0[2]
             ];
         } else {
-            // _ang = 0;
             d = observer0;
         }
 
