@@ -853,7 +853,6 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         }
     }
 
-    //safe cast?
     function tokenURI(uint256 tokenId) public view returns (string memory) {
         string memory _svg = string(
             abi.encodePacked(svgHead, (renderTokenById(tokenId)), svgTail)
@@ -864,13 +863,13 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
                 num2solid[tokenId % 5].name,
                 " ",
                 uint2str(tokenId / 5),
-                '" , "polyhydron" : "',
-                num2solid[tokenId % 5].name
+                '" ,"attributes": [{"display_type": "number", "trait_type": "tokenId", "value": ',
+                uint2str(tokenId),
+                '},{"trait_type": "polyhydron", "value": "',
+                num2solid[tokenId % 5].name,
+                '"}]'
             )
         );
-        // '" , "polyhydron" : ",'
-        // num2solid[tokenId % 5].name,
-        //
 
         return
             string(
@@ -880,7 +879,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
                         bytes(
                             abi.encodePacked(
                                 _metadataTop,
-                                ' " , "image": "data:image/svg+xml;base64,',
+                                '  , "image": "data:image/svg+xml;base64,',
                                 Base64.encode(bytes(_svg)),
                                 '"}'
                             )
