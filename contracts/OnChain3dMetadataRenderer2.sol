@@ -188,7 +188,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         );
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
-        require(tempNorm > 55340232221128654848, "too close");
+        require(tempNorm > 64563604257983430656, "too close");
         minimalSettings[id] = MinimalSetting(
             _observer,
             _compressed,
@@ -682,7 +682,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         );
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
-        require(tempNorm > 55340232221128654848, "too close");
+        require(tempNorm > 64563604257983430656, "too close");
         return
             minimalToGeneral(
                 MinimalSetting(_observer, _compressed, _colorlist)
