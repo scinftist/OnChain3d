@@ -26,8 +26,8 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
     string private _contractURI;
 
     uint256 constant Pi = 3141592653589793238;
-    //observer distance to projection plane
-    int128 public dist = ABDKMath64x64.fromInt(1);
+    //observer distance to projection plane = 1
+    int128 constant dist = 18446744073709551616;
     //// svg header
     string private constant svgHead =
         '<svg width="1000" height="1000" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
@@ -35,19 +35,10 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
     // parts for rendering polygon svg
 
     string private constant p1 = '<polygon points="';
-    string private constant p2 = '" fill="#';
+    string private constant p2 = '" fill="';
 
     string private constant p3 = '" opacity="0.';
     string private constant p4 = '" />';
-
-    ////
-    // parts for rendering wireframe svg
-    string private constant l1 = '<line x1="';
-    string private constant l2 = '" y1="';
-    string private constant l3 = '" x2="';
-    string private constant l4 = '" y2="';
-    string private constant l5 = '" stroke="#';
-    string private constant l6 = '" stroke-width="2"/>';
 
     /// struct to carry data along the the {renderTokenById} and {previewTokenById} - too many stack too deep
     struct deepstruct {
@@ -63,14 +54,6 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         uint64[] pix0;
     }
 
-    // struct to carry data along the the {svgWireframe} to  cumpute wireframe setting- too many stack too deep
-    struct wire_struct {
-        uint64[] pix;
-        bool[] adj;
-        uint24 wire_color;
-        uint256 lenVertices;
-        uint24 back_color;
-    }
     // struct to carry data along the the {svgPolygon}  to  cumpute polygon setting- too many stack too deep
     struct poly_struct {
         uint64[] pix;
@@ -79,6 +62,8 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         uint24[] color_list;
         uint8 opacity;
         uint8 polygon;
+        bool face_or_wire;
+        uint24 wire_color;
         uint24 back_color;
     }
     // struct to carry data inside the {scaledPoints}
@@ -91,7 +76,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
     struct solid {
         string name;
         int128[3][] vertices;
-        bool[] adjacency_matrix;
+        // bool[] adjacency_matrix;
         uint8[] face_list;
         uint8 face_polygon;
     }
@@ -114,7 +99,18 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
     }
 
     // defualt value for token that has not set their generalSettings[tokenId] yet.
-    GeneralSetting private defaultSetting;
+    //defualt
+    int128[3] private defaultObserver = [
+        int128(73786976294838206464),
+        73786976294838206464,
+        18446744073709551616
+    ];
+    uint256 private constant defaultCompressed =
+        2575379241833274503823015105670432005;
+    bytes private constant defaultColorlist =
+        "0xf5b041f0e68c2c3e50bdc3c7d3540016a0857f8c8d34495e1abc9cc0392bf39c128e44ad2980b927ae60f1c40f9b59b62ecc713498dbe74c3cffc300";
+    //
+    // GeneralSetting private defaultSetting;
     // five solid
     mapping(uint256 => solid) num2solid;
     // tokenId -> GeneralSetting
@@ -122,49 +118,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
     // number of faces of each solid
     uint256[5] private number_of_faces = [4, 6, 8, 12, 20];
 
-    // initialize the default value, set in the constructor
-    function inital_array() private {
-        defaultSetting.observer = [
-            ABDKMath64x64.fromInt(4),
-            ABDKMath64x64.fromInt(4),
-            ABDKMath64x64.fromInt(1)
-        ];
-
-        ////
-        defaultSetting.wire_color = 16737945;
-        defaultSetting.face_or_wire = true;
-        defaultSetting.opacity = 69;
-        defaultSetting.rotating_mode = true;
-        defaultSetting.angular_speed_deg = 31;
-        defaultSetting.dist_v_normalize = false;
-        defaultSetting.color_list = [
-            16761600,
-            15158332,
-            3447003,
-            3066993,
-            10181046,
-            15844367,
-            2600544,
-            2719929,
-            9323693,
-            15965202,
-            12597547,
-            1752220,
-            3426654,
-            8359053,
-            1482885,
-            13849600,
-            12436423,
-            2899536,
-            15787660,
-            16101441
-        ];
-        defaultSetting.back_color = 0;
-    }
-
-    constructor() {
-        inital_array();
-    }
+    constructor() {}
 
     function setTargetAddress(IERC721mini _targetAddress) public onlyOwner {
         targetContract = _targetAddress;
@@ -179,13 +133,12 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         uint8 _tokenId,
         string calldata _name,
         int128[3][] calldata _vertices,
-        bool[] calldata _adjacency_matrix,
         uint8[] calldata _face_list,
         uint8 _face_polygon
     ) public onlyOwner {
         num2solid[_tokenId].name = _name;
         num2solid[_tokenId].vertices = _vertices;
-        num2solid[_tokenId].adjacency_matrix = _adjacency_matrix;
+
         num2solid[_tokenId].face_list = _face_list;
         num2solid[_tokenId].face_polygon = _face_polygon;
     }
@@ -253,7 +206,17 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
             _minimalSetting.observer[0] == 0 && _minimalSetting.observer[1] == 0
         ) {
             isDefault = true;
-            return (isDefault, defaultSetting);
+            // return (isDefault, defaultSetting);
+            return (
+                isDefault,
+                minimalToGeneral(
+                    MinimalSetting(
+                        defaultObserver,
+                        defaultCompressed,
+                        defaultColorlist
+                    )
+                )
+            );
         } else {
             isDefault = false;
             return (isDefault, minimalToGeneral(_minimalSetting));
@@ -407,7 +370,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
     function plane_vs_observer(
         int128[3] memory relative_observer0,
         int128[3] memory plane_normal0
-    ) internal view returns (int128[3] memory) {
+    ) internal pure returns (int128[3] memory) {
         int128[3] memory d = [
             ABDKMath64x64.fromInt(0),
             ABDKMath64x64.fromInt(0),
@@ -650,7 +613,9 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
             abi.encodePacked(
                 '<rect x="0" y="0" width="1000" height="1000" fill="#',
                 toHexString(pls0.back_color, 3),
-                '" /><g stroke="#000" stroke-width="1.42" stroke-opacity="0.69">'
+                '" /><g stroke="#',
+                toHexString(pls0.wire_color, 3),
+                '" stroke-width="1.42" stroke-opacity="0.69">'
             )
         );
         uint8[] memory face_list0 = pls0.face_list;
@@ -687,59 +652,17 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
                 a = string(abi.encodePacked(a, uint2str(x0), ","));
                 a = string(abi.encodePacked(a, uint2str(y0), " "));
             }
-            a = string(abi.encodePacked(a, p2, toHexString(color, 3), p3));
-
+            if (pls0.face_or_wire) {
+                a = string(
+                    abi.encodePacked(a, p2, "#", toHexString(color, 3), p3)
+                );
+            } else {
+                a = string(abi.encodePacked(a, p2, "none", p3));
+            }
             a = string(abi.encodePacked(a, opacityStr, p4));
         }
 
         return string(abi.encodePacked(a, "</g>"));
-    }
-
-    // rendering token with wireframe (wire) setting
-    function svgWireframe(
-        wire_struct memory wrs0
-    ) internal pure returns (string memory) {
-        uint256 vLen = wrs0.lenVertices;
-        string memory a = string(
-            abi.encodePacked(
-                '<rect x="0" y="0" width="1000" height="1000" fill="#',
-                toHexString(wrs0.back_color, 3),
-                '" />'
-            )
-        );
-
-        for (uint256 i = 1; i < vLen; i++) {
-            for (uint256 j; j < i; j++) {
-                if (wrs0.adj[i * vLen + j] == true) {
-                    a = string(
-                        abi.encodePacked(
-                            a,
-                            l1,
-                            uint2str(wrs0.pix[i * 2 + 0]),
-                            l2
-                        )
-                    );
-                    a = string(
-                        abi.encodePacked(a, uint2str(wrs0.pix[i * 2 + 1]), l3)
-                    );
-
-                    a = string(
-                        abi.encodePacked(
-                            a,
-                            uint2str(wrs0.pix[j * 2 + 0]),
-                            l4,
-                            uint2str(wrs0.pix[j * 2 + 1]),
-                            l5
-                        )
-                    );
-                    a = string(
-                        abi.encodePacked(a, toHexString(wrs0.wire_color, 3), l6)
-                    );
-                }
-            }
-        }
-
-        return a;
     }
 
     // preparing setting of token for {previewTokenById}
@@ -783,7 +706,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         );
 
         pix_struct memory pxs;
-
+        poly_struct memory pls;
         deepstruct memory _deepstruct;
 
         int128[3] memory _observer = _generalSetting.observer;
@@ -828,37 +751,24 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
 
         _deepstruct.pix0 = scaledPoints(pxs);
 
-        if (_generalSetting.face_or_wire) {
-            poly_struct memory pls;
-            _deepstruct._face_index = face_index(
-                _observer,
-                _solid.vertices,
-                _solid.face_list,
-                _solid.face_polygon
-            );
+        _deepstruct._face_index = face_index(
+            _observer,
+            _solid.vertices,
+            _solid.face_list,
+            _solid.face_polygon
+        );
 
-            pls.pix = _deepstruct.pix0;
-            pls.face_list = _solid.face_list;
-            pls.color_list = _generalSetting.color_list;
-            pls.sorted_index = _deepstruct._face_index;
-            pls.opacity = _generalSetting.opacity;
-            pls.polygon = _solid.face_polygon;
-            pls.back_color = _generalSetting.back_color;
+        pls.pix = _deepstruct.pix0;
+        pls.face_list = _solid.face_list;
+        pls.color_list = _generalSetting.color_list;
+        pls.sorted_index = _deepstruct._face_index;
+        pls.opacity = _generalSetting.opacity;
+        pls.polygon = _solid.face_polygon;
+        pls.wire_color = _generalSetting.wire_color;
+        pls.face_or_wire = _generalSetting.face_or_wire;
+        pls.back_color = _generalSetting.back_color;
 
-            // rendering svg in polygon setting
-            return svgPolygon(pls);
-        } else {
-            wire_struct memory wrs;
-            wrs.pix = _deepstruct.pix0;
-            wrs.adj = _solid.adjacency_matrix;
-            wrs.wire_color = _generalSetting.wire_color;
-
-            wrs.lenVertices = _solid.vertices.length;
-            wrs.back_color = _generalSetting.back_color;
-
-            // wrs.headstring = "";
-            return svgWireframe(wrs);
-        }
+        return svgPolygon(pls);
     }
 
     function tokenURI(uint256 tokenId) public view returns (string memory) {
@@ -909,6 +819,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         //structs to carry data - to avoid stack too deep
         pix_struct memory pxs;
         deepstruct memory _deepstruct;
+        poly_struct memory pls;
 
         int128[3] memory _observer = _generalSetting.observer;
         _deepstruct._center = center(_solid.vertices);
@@ -955,37 +866,24 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         // scaling the points and removing decimal point
         _deepstruct.pix0 = scaledPoints(pxs);
 
-        if (_generalSetting.face_or_wire) {
-            poly_struct memory pls;
-            // depth sorting the polygon (faces)
-            _deepstruct._face_index = face_index(
-                _observer,
-                _solid.vertices,
-                _solid.face_list,
-                _solid.face_polygon
-            );
+        _deepstruct._face_index = face_index(
+            _observer,
+            _solid.vertices,
+            _solid.face_list,
+            _solid.face_polygon
+        );
 
-            pls.pix = _deepstruct.pix0;
-            pls.face_list = _solid.face_list;
-            pls.color_list = _generalSetting.color_list;
-            pls.sorted_index = _deepstruct._face_index;
-            pls.opacity = _generalSetting.opacity;
-            pls.polygon = _solid.face_polygon;
-            pls.back_color = _generalSetting.back_color;
+        pls.pix = _deepstruct.pix0;
+        pls.face_list = _solid.face_list;
+        pls.color_list = _generalSetting.color_list;
+        pls.sorted_index = _deepstruct._face_index;
+        pls.opacity = _generalSetting.opacity;
+        pls.polygon = _solid.face_polygon;
+        pls.wire_color = _generalSetting.wire_color;
+        pls.face_or_wire = _generalSetting.face_or_wire;
+        pls.back_color = _generalSetting.back_color;
 
-            // rendering svg in polygon setting
-            return svgPolygon(pls);
-        } else {
-            wire_struct memory wrs;
-            wrs.pix = _deepstruct.pix0;
-            wrs.adj = _solid.adjacency_matrix;
-            wrs.wire_color = _generalSetting.wire_color;
-
-            wrs.lenVertices = _solid.vertices.length;
-            wrs.back_color = _generalSetting.back_color;
-            // rendering svg in wireframe setting
-            return svgWireframe(wrs);
-        }
+        return svgPolygon(pls);
     }
 
     function opacityConverter(uint256 compressd) internal pure returns (uint8) {
@@ -1119,7 +1017,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         return _contractURI;
     }
 
-    function initializeWithData(bytes memory initData) public pure {
+    function initializeWithData(bytes memory) public pure {
         revert("not callable");
     }
 }
