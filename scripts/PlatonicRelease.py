@@ -4,7 +4,7 @@ from brownie import (
     accounts,
     config,
     network,
-    OnChain3dMetadataRenderer2,
+    OnChain3dMetadataRenderer,
     OnChain3dTokenPlaceHolder,
 )
 import json
@@ -15,7 +15,7 @@ def deploy_and_create(mint_req=True):
     test_counter = 0
     pass_counter = 0
     account = get_account()
-    demo = OnChain3dMetadataRenderer2.deploy({"from": account})
+    demo = OnChain3dMetadataRenderer.deploy({"from": account})
     #############
     # with open("./solid-json.json", "r") as ss:
     with open("./scripts/PlatonicSolids.json", "r") as ss:
