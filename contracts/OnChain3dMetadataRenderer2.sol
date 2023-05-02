@@ -105,8 +105,7 @@ contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
         73786976294838206464,
         18446744073709551616
     ];
-    uint256 private constant defaultCompressed =
-        2575379241833274503823015105670432005;
+    uint256 private constant defaultCompressed = 71888926379296005;
     bytes private constant defaultColorlist =
         hex"ffc300e74c3c3498db2ecc719b59b6f1c40f27ae602980b98e44adf39c12c0392b1abc9c34495e7f8c8d16a085d35400bdc3c72c3e50f0e68cf5b041";
     //
