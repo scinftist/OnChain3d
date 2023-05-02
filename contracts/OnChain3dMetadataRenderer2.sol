@@ -21,7 +21,7 @@ import "./interfaces/IERC721mini.sol";
  * for more info please visit https://OnChain3d.xyz
  */
 
-contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
+contract OnChain3dMetadataRenderer2 is Ownable, IMetadataRenderer {
     IERC721mini public targetContract;
     string private _contractURI;
 
