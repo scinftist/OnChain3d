@@ -5,7 +5,7 @@ from brownie import (
     config,
     network,
     OnChain3dMetadataRenderer,
-    OnChain3dTokenPlaceHolder,
+    OnChain3D,
 )
 import json
 from time import sleep
@@ -16,6 +16,9 @@ def deploy_and_create(mint_req=True):
     pass_counter = 0
     account = get_account()
     demo = OnChain3dMetadataRenderer.deploy({"from": account})
+
+    token = OnChain3D.deploy({"from": account})
+    print("time remaining = " + str(token.remainingTime()))
     #############
     # with open("./solid-json.json", "r") as ss:
     with open("./scripts/PlatonicSolids.json", "r") as ss:
@@ -39,7 +42,7 @@ def deploy_and_create(mint_req=True):
 
         # print(t)
 
-    token = OnChain3dTokenPlaceHolder.deploy({"from": account})
+    # token = OnChain3dTokenPlaceHolder.deploy({"from": account})
     token.setMetadataRenderer(demo.address, {"from": account})
     sleep(1)
     demo.setTargetAddress(token.address, {"from": account})
@@ -54,7 +57,7 @@ def deploy_and_create(mint_req=True):
 
     sleep(0.1)
     for i in range(5):
-        token.mintToken({"from": accounts[i]})
+        token.mintToken(1, {"from": accounts[i], "value": 1e16})
 
     for i in range(5):
 
@@ -108,6 +111,8 @@ def deploy_and_create(mint_req=True):
     print(pass_counter, "/", test_counter)
 
     sleep(2)
+
+    print("time remaining = " + str(token.remainingTime()))
     print("done")
 
 
