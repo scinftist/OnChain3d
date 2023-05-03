@@ -193,6 +193,8 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
             _compressed,
             _colorlist
         );
+        // maybe would be removed for mainnet for gas saving
+        targetContract.pokeMetadataUpdate(id);
     }
 
     // retrive setting
