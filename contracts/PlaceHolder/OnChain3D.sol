@@ -19,8 +19,6 @@ contract OnChain3D is ERC721Enumerable, Ownable, ReentrancyGuard {
 
     uint256 public _startTime;
     address private renderer;
-    //IERC4906
-    event MetadataUpdate(uint256 _tokenId);
 
     constructor() ERC721("OnChain3D-sepolia", "OC3D-sepolia") {
         _startTime = block.timestamp;
@@ -58,21 +56,6 @@ contract OnChain3D is ERC721Enumerable, Ownable, ReentrancyGuard {
                 _safeMint(msg.sender, mintIndex);
             }
         }
-    }
-
-    // maybe would be removed for mainnet for gas saving
-    function pokeMetadataUpdate(uint256 _tokenId) external {
-        require(msg.sender == renderer, "onlyrenderer");
-        emit MetadataUpdate(_tokenId);
-    }
-
-    /// @dev See {IERC165-supportsInterface}.\\ ERC4906
-    function supportsInterface(
-        bytes4 interfaceId
-    ) public view virtual override returns (bool) {
-        return
-            interfaceId == bytes4(0x49064906) ||
-            super.supportsInterface(interfaceId);
     }
 
     function remainingTime() public view returns (uint256) {
