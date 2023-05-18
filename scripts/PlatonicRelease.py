@@ -91,7 +91,7 @@ def deploy_and_create(mint_req=True):
         print("owner Of test passed")
         pass_counter += 1
     except:
-        print("something wnet worng ")
+        print("something wnet worng A")
     test_counter += 1
     try:
         demo.setMinimalSetting(

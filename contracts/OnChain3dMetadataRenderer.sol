@@ -11,6 +11,12 @@ import "./lib/Trigonometry.sol";
 import "./interfaces/IMetadataRenderer.sol";
 import "./interfaces/IERC721mini.sol";
 
+///
+import {Fixedpoint32x32} from "./3DUtils/Fixedpoint32x32.sol";
+import "./SolidData.sol";
+
+import "./TokenSettings.sol";
+
 /**
  * @dev the following contract is a thought experiment of first 3d graphics rendering by Etherum,
  * for this experiment we nominateted platonic solids to render becuase they are a good benchmark
@@ -21,7 +27,12 @@ import "./interfaces/IERC721mini.sol";
  * for more info please visit https://OnChain3d.xyz
  */
 
-contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
+contract OnChain3dMetadataRenderer is
+    Ownable,
+    IMetadataRenderer,
+    SolidData,
+    TokenSettings
+{
     IERC721mini public targetContract;
     string private _contractURI;
 
@@ -72,54 +83,6 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         int128[3] _observer;
         bool _dist_v_normalize;
     }
-    // struct for holding data of 5 Solid that many tokens uses
-    struct Solid {
-        string name;
-        int128[3][] vertices;
-        uint8[] face_list;
-        uint8 face_polygon;
-    }
-    struct PackedSolid {
-        string name;
-        uint256[] vertices;
-        bytes face_list;
-        uint8 face_polygon;
-    }
-    // struct for holding each token setting
-    struct GeneralSetting {
-        int128[3] observer;
-        uint8 opacity;
-        bool rotating_mode;
-        uint16 angular_speed_deg;
-        bool dist_v_normalize;
-        bool face_or_wire;
-        uint24 back_color;
-        uint24 wire_color;
-        uint24[] color_list;
-    }
-    // struct MinimalSetting {
-    //     int128[3] observer;
-    //     uint256 compressed;
-    //     bytes colorlist;
-    // }
-    struct MinimalSetting {
-        uint256 observer; //packeSettingAndObserver;
-        bytes colorlist;
-    }
-
-    uint256 private constant packedDefaultObserver =
-        0x00ff6699001f4505000000040000000000000004000000000000000100000000;
-    // uint256 private constant defaultCompressed = 71888926379296005;
-    bytes private constant defaultColorlist =
-        hex"ffc300e74c3c3498db2ecc719b59b6f1c40f27ae602980b98e44adf39c12c0392b1abc9c34495e7f8c8d16a085d35400bdc3c72c3e50f0e68cf5b041";
-    //
-    // GeneralSetting private defaultSetting;
-    // five Solid
-    mapping(uint256 => PackedSolid) num2PackedSolid;
-    // tokenId -> GeneralSetting
-    mapping(uint256 => MinimalSetting) minimalSettings;
-    // number of faces of each Solid
-    uint256[5] private number_of_faces = [4, 6, 8, 12, 20];
 
     constructor() {}
 
@@ -131,57 +94,20 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         _contractURI = _uri;
     }
 
-    // uploading data of the 5 platonic Solid
     function solidStruct_IMU(
         uint8 _tokenId,
         string calldata _name,
         uint256[] calldata _vertices,
         bytes calldata _face_list,
         uint8 _face_polygon
-    ) public {
-        num2PackedSolid[_tokenId].name = _name;
-        num2PackedSolid[_tokenId].vertices = _vertices;
-        num2PackedSolid[_tokenId].face_list = _face_list;
-        num2PackedSolid[_tokenId].face_polygon = _face_polygon;
-    }
-
-    function getUnPackedSolid(
-        uint256 _solidNumber
-    ) public view returns (Solid memory) {
-        PackedSolid memory _PS = num2PackedSolid[_solidNumber];
-        uint256 _len = _PS.vertices.length;
-        uint256 _faceLen = number_of_faces[_solidNumber] * _PS.face_polygon;
-        uint8[] memory _fl = new uint8[](_faceLen);
-        int128[3][] memory _vertices = new int128[3][](_len);
-        for (uint56 i = 0; i < _len; i++) {
-            uint256 tempUnit = _PS.vertices[i];
-
-            _vertices[i] = unPackVector(tempUnit);
-        }
-        for (uint256 j = 0; j < _faceLen; j++) {
-            _fl[j] = uint8(_PS.face_list[j]);
-        }
-        return Solid(_PS.name, _vertices, _fl, _PS.face_polygon);
-    }
-
-    // a  function to unpack the packed data of minimal setting to general setting
-    function minimalToGeneral(
-        MinimalSetting memory _minimal
-    ) internal pure returns (GeneralSetting memory) {
-        uint256 _comp = _minimal.observer >> 192;
-        int128[3] memory _observer = unPackVector(_minimal.observer);
-        return
-            GeneralSetting({
-                observer: _observer,
-                opacity: opacityConverter(_comp),
-                rotating_mode: rotating_modeConverter(_comp),
-                angular_speed_deg: angular_speed_degConverter(_comp),
-                dist_v_normalize: dist_v_normalizeConverter(_comp),
-                face_or_wire: face_or_wiretConverter(_comp),
-                back_color: back_colorConverter(_comp),
-                wire_color: wire_colorConverter(_comp),
-                color_list: color_listConverter(_minimal.colorlist)
-            });
+    ) public onlyOwner {
+        SolidData.solidStruct(
+            _tokenId,
+            _name,
+            _vertices,
+            _face_list,
+            _face_polygon
+        );
     }
 
     // set setting
@@ -207,54 +133,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
         require(tempNorm > 64563604257983430656, "too close");
-        uint256 _packObserver;
-        unchecked {
-            _packObserver = _compressed << 64;
-            _packObserver = uint256(uint128(_observer[0] / 2 ** 32)) >> 32;
-            _packObserver = _packObserver << 64;
-            _packObserver = uint256(uint128(_observer[1] / 2 ** 32)) >> 32;
-            _packObserver = _packObserver << 64;
-            _packObserver = uint256(uint128(_observer[2] / 2 ** 32)) >> 32;
-        }
-        // uint256 _packObserver = uint256(_observer[0] / 2 ** 32) >> 32;
-        minimalSettings[id] = MinimalSetting(_packObserver, _colorlist);
-    }
-
-    // retrive setting
-    function getGeneralSetting(
-        uint256 id
-    ) public view returns (bool, GeneralSetting memory) {
-        bool isDefault;
-        MinimalSetting memory _minimalSetting = minimalSettings[id];
-        int128[3] memory _observer = unPackVector(_minimalSetting.observer);
-        if (_observer[0] == 0 && _observer[1] == 0) {
-            isDefault = true;
-            // return (isDefault, defaultSetting);
-            return (
-                isDefault,
-                minimalToGeneral(
-                    MinimalSetting(packedDefaultObserver, defaultColorlist)
-                )
-            );
-        } else {
-            isDefault = false;
-            return (isDefault, minimalToGeneral(_minimalSetting));
-        }
-    }
-
-    function getMinimalSetting(
-        uint256 id
-    ) public view returns (bool, MinimalSetting memory) {
-        bool isDefault;
-        MinimalSetting memory _minimalSetting = minimalSettings[id];
-        int128[3] memory _observer = unPackVector(_minimalSetting.observer);
-        if (_observer[0] == 0 && _observer[1] == 0) {
-            isDefault = true;
-            return (isDefault, _minimalSetting);
-        } else {
-            isDefault = false;
-            return (isDefault, _minimalSetting);
-        }
+        TokenSettings.setMinimal(id, _observer, _compressed, _colorlist);
     }
 
     // return the cross product of two vector
@@ -911,103 +790,6 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         return svgPolygon(pls);
     }
 
-    function opacityConverter(uint256 compressd) internal pure returns (uint8) {
-        unchecked {
-            return uint8((compressd >> 8) & 0xff);
-        }
-    }
-
-    function rotating_modeConverter(
-        uint256 compressd
-    ) internal pure returns (bool) {
-        unchecked {
-            return (compressd & 1) == 1;
-        }
-    }
-
-    function angular_speed_degConverter(
-        uint256 compressd
-    ) internal pure returns (uint16) {
-        unchecked {
-            return uint16((compressd >> 16) & 0xffff);
-        }
-    }
-
-    function dist_v_normalizeConverter(
-        uint256 compressd
-    ) internal pure returns (bool) {
-        unchecked {
-            return (compressd & 2) == 2;
-        }
-    }
-
-    function face_or_wiretConverter(
-        uint256 compressd
-    ) internal pure returns (bool) {
-        unchecked {
-            return (compressd & 4) == 4;
-        }
-    }
-
-    function wire_colorConverter(
-        uint256 compressd
-    ) internal pure returns (uint24) {
-        unchecked {
-            return uint24((compressd >> 32) & 0xffffff);
-        }
-    }
-
-    function back_colorConverter(
-        uint256 compressd
-    ) internal pure returns (uint24) {
-        unchecked {
-            return uint24((compressd >> 56) & 0xffffff);
-        }
-    }
-
-    function color_listConverter(
-        bytes memory colorlist
-    ) public pure returns (uint24[] memory) {
-        uint256 len = colorlist.length;
-        uint24[] memory _colors = new uint24[](len / 3);
-        for (uint256 i; i < len / 3; i++) {
-            unchecked {
-                _colors[i] = uint24(
-                    bytesToUint(
-                        abi.encodePacked(
-                            colorlist[i * 3],
-                            colorlist[i * 3 + 1],
-                            colorlist[i * 3 + 2]
-                        )
-                    )
-                );
-            }
-        }
-        return _colors;
-    }
-
-    function unPackVector(
-        uint256 _packedVector
-    ) public pure returns (int128[3] memory) {
-        int128[3] memory _v;
-
-        unchecked {
-            _v[2] =
-                int128(int64(uint64(_packedVector & uint256(2 ** 64 - 1)))) *
-                2 ** 32;
-            _packedVector = _packedVector >> 64;
-            _v[1] =
-                int128(int64(uint64(_packedVector & uint256(2 ** 64 - 1)))) *
-                2 ** 32;
-            _packedVector = _packedVector >> 64;
-            _v[0] =
-                int128(int64(uint64(_packedVector & uint256(2 ** 64 - 1)))) *
-                2 ** 32;
-        }
-
-        return _v;
-    }
-
     function uint2str(
         uint256 _i
     ) internal pure returns (string memory _uintAsString) {
@@ -1030,17 +812,6 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
             _i /= 10;
         }
         return string(bstr);
-    }
-
-    function bytesToUint(bytes memory b) internal pure returns (uint256) {
-        uint256 number;
-        for (uint256 i = 0; i < b.length; i++) {
-            number =
-                number +
-                uint256(uint8(b[i])) *
-                (2 ** (8 * (b.length - (i + 1))));
-        }
-        return number;
     }
 
     //needs check
