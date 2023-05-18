@@ -1,10 +1,9 @@
 //SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
+import {ABDKMath64x64} from "../lib/ABDKMath64x64.sol";
 
-library 3DLinearAlgebra {
-
-
+library LinearAlgebra3D {
     // return the cross product of two vector
     function cross(
         int128[3] memory a,

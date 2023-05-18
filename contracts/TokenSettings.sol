@@ -1,19 +1,19 @@
 //SPDX-License-Identifier: MIT
 
-import {Fixedpoint32x32} from "./3DUtils/Fixedpoint32x32.sol";
+import {Fixedpoint32x32} from "./Utils3D/Fixedpoint32x32.sol";
 
 pragma solidity ^0.8.0;
 
 abstract contract TokenSettings {
     struct GeneralSetting {
         int128[3] observer;
-        uint8 opacity;
-        bool rotating_mode;
-        uint16 angular_speed_deg;
-        bool dist_v_normalize;
-        bool face_or_wire;
         uint24 back_color;
         uint24 wire_color;
+        uint16 angular_speed_deg;
+        uint8 opacity;
+        bool rotating_mode;
+        bool dist_v_normalize;
+        bool face_or_wire;
         uint24[] color_list;
     }
 

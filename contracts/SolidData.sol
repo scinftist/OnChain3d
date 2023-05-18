@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: MIT
 
-import {Fixedpoint32x32} from "./3DUtils/Fixedpoint32x32.sol";
+import {Fixedpoint32x32} from "./Utils3D/Fixedpoint32x32.sol";
 
 pragma solidity ^0.8.0;
 
@@ -12,9 +12,9 @@ abstract contract SolidData {
         uint8 face_polygon;
     }
     struct PackedSolid {
-        string name;
         uint256[] vertices;
         bytes face_list;
+        string name;
         uint8 face_polygon;
     }
     uint256[5] internal number_of_faces = [4, 6, 8, 12, 20];

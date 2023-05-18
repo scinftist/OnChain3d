@@ -5,16 +5,17 @@ pragma solidity ^0.8.0;
 import {Base64} from "./utils/Base64.sol";
 import "./access/Ownable.sol";
 
-import "./lib/ABDKMath64x64.sol";
+import {ABDKMath64x64} from "./lib/ABDKMath64x64.sol";
 import "./lib/Trigonometry.sol";
 
 import "./interfaces/IMetadataRenderer.sol";
 import "./interfaces/IERC721mini.sol";
 
 ///
-import {Fixedpoint32x32} from "./3DUtils/Fixedpoint32x32.sol";
-import "./SolidData.sol";
+import {Fixedpoint32x32} from "./Utils3D/Fixedpoint32x32.sol";
 
+//
+import "./SolidData.sol";
 import "./TokenSettings.sol";
 
 /**
@@ -39,6 +40,8 @@ contract OnChain3dMetadataRenderer is
     uint256 constant Pi = 3141592653589793238;
     //observer distance to projection plane = 1
     int128 constant dist = 18446744073709551616;
+    // minimum_distance from solid object
+    int128 private constant _minDistance = 64563604257983430656;
     //// svg header
     string private constant svgHead =
         '<svg width="1000" height="1000" viewBox="0 0 1000 1000" fill="none" xmlns="http://www.w3.org/2000/svg">';
@@ -132,7 +135,7 @@ contract OnChain3dMetadataRenderer is
         );
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
-        require(tempNorm > 64563604257983430656, "too close");
+        require(tempNorm > _minDistance, "too close");
         TokenSettings.setMinimal(id, _observer, _compressed, _colorlist);
     }
 
@@ -580,14 +583,11 @@ contract OnChain3dMetadataRenderer is
         uint256 _packObserver;
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
-        require(tempNorm > 64563604257983430656, "too close");
+        require(tempNorm > _minDistance, "too close");
         unchecked {
-            _packObserver = _compressed << 64;
-            _packObserver = uint256(uint128(_observer[0] / 2 ** 32)) >> 32;
-            _packObserver = _packObserver << 64;
-            _packObserver = uint256(uint128(_observer[1] / 2 ** 32)) >> 32;
-            _packObserver = _packObserver << 64;
-            _packObserver = uint256(uint128(_observer[2] / 2 ** 32)) >> 32;
+            _packObserver =
+                (_compressed << 192) |
+                Fixedpoint32x32.packVector(_observer);
         }
         return minimalToGeneral(MinimalSetting(_packObserver, _colorlist));
     }
