@@ -72,12 +72,17 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         int128[3] _observer;
         bool _dist_v_normalize;
     }
-    // struct for holding data of 5 solid that many tokens uses
-    struct solid {
+    // struct for holding data of 5 Solid that many tokens uses
+    struct Solid {
         string name;
         int128[3][] vertices;
-        // bool[] adjacency_matrix;
         uint8[] face_list;
+        uint8 face_polygon;
+    }
+    struct PackedSolid {
+        string name;
+        uint256[] vertices;
+        bytes face_list;
         uint8 face_polygon;
     }
     // struct for holding each token setting
@@ -92,29 +97,28 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         uint24 wire_color;
         uint24[] color_list;
     }
+    // struct MinimalSetting {
+    //     int128[3] observer;
+    //     uint256 compressed;
+    //     bytes colorlist;
+    // }
     struct MinimalSetting {
-        int128[3] observer;
-        uint256 compressed;
+        uint256 observer; //packeSettingAndObserver;
         bytes colorlist;
     }
 
-    // defualt value for token that has not set their generalSettings[tokenId] yet.
-    //defualt
-    int128[3] private defaultObserver = [
-        int128(73786976294838206464),
-        73786976294838206464,
-        18446744073709551616
-    ];
-    uint256 private constant defaultCompressed = 71888926379296005;
+    uint256 private constant packedDefaultObserver =
+        0x00ff6699001f4505000000040000000000000004000000000000000100000000;
+    // uint256 private constant defaultCompressed = 71888926379296005;
     bytes private constant defaultColorlist =
         hex"ffc300e74c3c3498db2ecc719b59b6f1c40f27ae602980b98e44adf39c12c0392b1abc9c34495e7f8c8d16a085d35400bdc3c72c3e50f0e68cf5b041";
     //
     // GeneralSetting private defaultSetting;
-    // five solid
-    mapping(uint256 => solid) num2solid;
+    // five Solid
+    mapping(uint256 => PackedSolid) num2PackedSolid;
     // tokenId -> GeneralSetting
     mapping(uint256 => MinimalSetting) minimalSettings;
-    // number of faces of each solid
+    // number of faces of each Solid
     uint256[5] private number_of_faces = [4, 6, 8, 12, 20];
 
     constructor() {}
@@ -127,33 +131,48 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         _contractURI = _uri;
     }
 
-    // uploading data of the 5 platonic solid
+    // uploading data of the 5 platonic Solid
     function solidStruct_IMU(
         uint8 _tokenId,
         string calldata _name,
-        int128[3][] calldata _vertices,
-        uint8[] calldata _face_list,
+        uint256[] calldata _vertices,
+        bytes calldata _face_list,
         uint8 _face_polygon
-    ) public onlyOwner {
-        num2solid[_tokenId].name = _name;
-        num2solid[_tokenId].vertices = _vertices;
-
-        num2solid[_tokenId].face_list = _face_list;
-        num2solid[_tokenId].face_polygon = _face_polygon;
+    ) public {
+        num2PackedSolid[_tokenId].name = _name;
+        num2PackedSolid[_tokenId].vertices = _vertices;
+        num2PackedSolid[_tokenId].face_list = _face_list;
+        num2PackedSolid[_tokenId].face_polygon = _face_polygon;
     }
 
-    function getSolid(uint256 _solidNumber) public view returns (solid memory) {
-        return num2solid[_solidNumber];
+    function getUnPackedSolid(
+        uint256 _solidNumber
+    ) public view returns (Solid memory) {
+        PackedSolid memory _PS = num2PackedSolid[_solidNumber];
+        uint256 _len = _PS.vertices.length;
+        uint256 _faceLen = number_of_faces[_solidNumber] * _PS.face_polygon;
+        uint8[] memory _fl = new uint8[](_faceLen);
+        int128[3][] memory _vertices = new int128[3][](_len);
+        for (uint56 i = 0; i < _len; i++) {
+            uint256 tempUnit = _PS.vertices[i];
+
+            _vertices[i] = unPackVector(tempUnit);
+        }
+        for (uint256 j = 0; j < _faceLen; j++) {
+            _fl[j] = uint8(_PS.face_list[j]);
+        }
+        return Solid(_PS.name, _vertices, _fl, _PS.face_polygon);
     }
 
     // a  function to unpack the packed data of minimal setting to general setting
     function minimalToGeneral(
         MinimalSetting memory _minimal
     ) internal pure returns (GeneralSetting memory) {
-        uint256 _comp = _minimal.compressed;
+        uint256 _comp = _minimal.observer >> 192;
+        int128[3] memory _observer = unPackVector(_minimal.observer);
         return
             GeneralSetting({
-                observer: _minimal.observer,
+                observer: _observer,
                 opacity: opacityConverter(_comp),
                 rotating_mode: rotating_modeConverter(_comp),
                 angular_speed_deg: angular_speed_degConverter(_comp),
@@ -188,11 +207,17 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
         require(tempNorm > 64563604257983430656, "too close");
-        minimalSettings[id] = MinimalSetting(
-            _observer,
-            _compressed,
-            _colorlist
-        );
+        uint256 _packObserver;
+        unchecked {
+            _packObserver = _compressed << 64;
+            _packObserver = uint256(uint128(_observer[0] / 2 ** 32)) >> 32;
+            _packObserver = _packObserver << 64;
+            _packObserver = uint256(uint128(_observer[1] / 2 ** 32)) >> 32;
+            _packObserver = _packObserver << 64;
+            _packObserver = uint256(uint128(_observer[2] / 2 ** 32)) >> 32;
+        }
+        // uint256 _packObserver = uint256(_observer[0] / 2 ** 32) >> 32;
+        minimalSettings[id] = MinimalSetting(_packObserver, _colorlist);
     }
 
     // retrive setting
@@ -201,19 +226,14 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
     ) public view returns (bool, GeneralSetting memory) {
         bool isDefault;
         MinimalSetting memory _minimalSetting = minimalSettings[id];
-        if (
-            _minimalSetting.observer[0] == 0 && _minimalSetting.observer[1] == 0
-        ) {
+        int128[3] memory _observer = unPackVector(_minimalSetting.observer);
+        if (_observer[0] == 0 && _observer[1] == 0) {
             isDefault = true;
             // return (isDefault, defaultSetting);
             return (
                 isDefault,
                 minimalToGeneral(
-                    MinimalSetting(
-                        defaultObserver,
-                        defaultCompressed,
-                        defaultColorlist
-                    )
+                    MinimalSetting(packedDefaultObserver, defaultColorlist)
                 )
             );
         } else {
@@ -227,9 +247,8 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
     ) public view returns (bool, MinimalSetting memory) {
         bool isDefault;
         MinimalSetting memory _minimalSetting = minimalSettings[id];
-        if (
-            _minimalSetting.observer[0] == 0 && _minimalSetting.observer[1] == 0
-        ) {
+        int128[3] memory _observer = unPackVector(_minimalSetting.observer);
+        if (_observer[0] == 0 && _observer[1] == 0) {
             isDefault = true;
             return (isDefault, _minimalSetting);
         } else {
@@ -289,7 +308,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         return d;
     }
 
-    // compute the center of the solid object
+    // compute the center of the Solid object
     function center(
         int128[3][] memory vertices0
     ) internal pure returns (int128[3] memory) {
@@ -310,7 +329,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         return d;
     }
 
-    // compute the relative observer from the center of tthe solid object and compute the rotation along z axis if need per 15 min
+    // compute the relative observer from the center of tthe Solid object and compute the rotation along z axis if need per 15 min
     function relative_observer(
         int128[3] memory observer0,
         int128[3] memory center0,
@@ -679,13 +698,19 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
             opacityConverter(_compressed) < 100,
             "opacity should be less than 100"
         );
+        uint256 _packObserver;
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
         require(tempNorm > 64563604257983430656, "too close");
-        return
-            minimalToGeneral(
-                MinimalSetting(_observer, _compressed, _colorlist)
-            );
+        unchecked {
+            _packObserver = _compressed << 64;
+            _packObserver = uint256(uint128(_observer[0] / 2 ** 32)) >> 32;
+            _packObserver = _packObserver << 64;
+            _packObserver = uint256(uint128(_observer[1] / 2 ** 32)) >> 32;
+            _packObserver = _packObserver << 64;
+            _packObserver = uint256(uint128(_observer[2] / 2 ** 32)) >> 32;
+        }
+        return minimalToGeneral(MinimalSetting(_packObserver, _colorlist));
     }
 
     //for preview the tokenSVG with new setting, see EIP-4883
@@ -695,8 +720,8 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         uint256 _compressedP,
         bytes calldata _colorlistP
     ) public view returns (string memory) {
-        solid memory _solid = num2solid[tid % 5];
-
+        // Solid memory _solid = num2solid[tid % 5];getUnPackedSolid
+        Solid memory _solid = getUnPackedSolid(tid % 5);
         GeneralSetting memory _generalSetting = preSetting(
             tid,
             _observerP,
@@ -777,13 +802,13 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
         string memory _metadataTop = string(
             abi.encodePacked(
                 '{"description": "interactive 3D objects fully on-chain, rendered by Etherum.", "name": "',
-                num2solid[tokenId % 5].name,
+                num2PackedSolid[tokenId % 5].name,
                 " ",
                 uint2str(tokenId / 5),
                 '" ,"attributes": [{"display_type": "number", "trait_type": "tokenId", "value": ',
                 uint2str(tokenId),
                 '},{"trait_type": "polyhydron", "value": "',
-                num2solid[tokenId % 5].name,
+                num2PackedSolid[tokenId % 5].name,
                 '"}]'
             )
         );
@@ -808,7 +833,8 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
 
     // for more detail see EIP-4883, renderTokenById -- Too many stack too deep see
     function renderTokenById(uint256 tid) public view returns (string memory) {
-        solid memory _solid = num2solid[tid % 5];
+        // Solid memory _solid = num2solid[tid % 5];getUnPackedSolid
+        Solid memory _solid = getUnPackedSolid(tid % 5);
 
         // GeneralSetting memory _generalSetting = generalSettings[tid];
         GeneralSetting memory _generalSetting;
@@ -822,7 +848,7 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
 
         int128[3] memory _observer = _generalSetting.observer;
         _deepstruct._center = center(_solid.vertices);
-        // relative observer with respect to center of the solid object
+        // relative observer with respect to center of the Solid object
         _observer = relative_observer(
             _observer,
             _deepstruct._center,
@@ -958,6 +984,28 @@ contract OnChain3dMetadataRenderer is Ownable, IMetadataRenderer {
             }
         }
         return _colors;
+    }
+
+    function unPackVector(
+        uint256 _packedVector
+    ) public pure returns (int128[3] memory) {
+        int128[3] memory _v;
+
+        unchecked {
+            _v[2] =
+                int128(int64(uint64(_packedVector & uint256(2 ** 64 - 1)))) *
+                2 ** 32;
+            _packedVector = _packedVector >> 64;
+            _v[1] =
+                int128(int64(uint64(_packedVector & uint256(2 ** 64 - 1)))) *
+                2 ** 32;
+            _packedVector = _packedVector >> 64;
+            _v[0] =
+                int128(int64(uint64(_packedVector & uint256(2 ** 64 - 1)))) *
+                2 ** 32;
+        }
+
+        return _v;
     }
 
     function uint2str(
