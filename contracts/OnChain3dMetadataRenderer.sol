@@ -649,7 +649,7 @@ contract OnChain3dMetadataRenderer is
             _deepstruct._plane_vs_observer
         );
         pxs.points_2d = _deepstruct._projected_points_in_2d;
-        pxs._observer = _generalSetting.observer;
+        pxs._observer = _observer;
         pxs._dist_v_normalize = _generalSetting.dist_v_normalize;
 
         _deepstruct.pix0 = scaledPoints(pxs);
@@ -765,7 +765,7 @@ contract OnChain3dMetadataRenderer is
             _deepstruct._plane_vs_observer
         );
         pxs.points_2d = _deepstruct._projected_points_in_2d;
-        pxs._observer = _generalSetting.observer;
+        pxs._observer = _observer;
         pxs._dist_v_normalize = _generalSetting.dist_v_normalize;
         // scaling the points and removing decimal point
         _deepstruct.pix0 = scaledPoints(pxs);
