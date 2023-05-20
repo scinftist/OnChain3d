@@ -97,6 +97,7 @@ contract OnChain3dMetadataRenderer is
         _contractURI = _uri;
     }
 
+    // see SolidData.sol
     function solidStruct_IMU(
         uint8 _tokenId,
         string calldata _name,
@@ -113,7 +114,7 @@ contract OnChain3dMetadataRenderer is
         );
     }
 
-    // set setting
+    // set setting see TokenSettings.sol
     function setMinimalSetting(
         uint256 id,
         int128[3] calldata _observer,
@@ -136,6 +137,7 @@ contract OnChain3dMetadataRenderer is
         int128[3] memory tempObserver = [_observer[0], _observer[1], int128(0)];
         int128 tempNorm = norm(tempObserver);
         require(tempNorm > _minDistance, "too close");
+        //see TokenSettings.sol
         TokenSettings.setMinimal(id, _observer, _compressed, _colorlist);
     }
 
@@ -211,7 +213,7 @@ contract OnChain3dMetadataRenderer is
         return d;
     }
 
-    // compute the relative observer from the center of tthe Solid object and compute the rotation along z axis if need per 15 min
+    // compute the relative observer from the center of tthe Solid object and compute the rotation along z axis if need per 1 min
     function relative_observer(
         int128[3] memory observer0,
         int128[3] memory center0,
@@ -225,7 +227,7 @@ contract OnChain3dMetadataRenderer is
         ];
 
         if (rotating_mode) {
-            uint256 tetha_rad = ((block.timestamp / 900) *
+            uint256 tetha_rad = ((block.timestamp / 60) *
                 (angle_deg % 360) *
                 Pi) / 180;
             int128 si = ABDKMath64x64.div(
