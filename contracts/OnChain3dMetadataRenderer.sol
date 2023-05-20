@@ -683,13 +683,13 @@ contract OnChain3dMetadataRenderer is
         string memory _metadataTop = string(
             abi.encodePacked(
                 '{"description": "interactive 3D objects fully on-chain, rendered by Etherum.", "name": "',
-                num2PackedSolid[tokenId % 5].name,
+                getSolidName(tokenId % 5),
                 " ",
                 uint2str(tokenId / 5),
                 '" ,"attributes": [{"display_type": "number", "trait_type": "tokenId", "value": ',
                 uint2str(tokenId),
                 '},{"trait_type": "polyhydron", "value": "',
-                num2PackedSolid[tokenId % 5].name,
+                getSolidName(tokenId % 5),
                 '"}]'
             )
         );

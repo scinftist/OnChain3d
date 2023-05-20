@@ -20,7 +20,7 @@ abstract contract SolidData {
     uint256[5] internal number_of_faces = [4, 6, 8, 12, 20];
 
     // five Solid
-    mapping(uint256 => PackedSolid) num2PackedSolid;
+    mapping(uint256 => PackedSolid) private num2PackedSolid;
 
     // uploading data of the 5 platonic Solid
     function solidStruct(
@@ -53,5 +53,11 @@ abstract contract SolidData {
             _fl[j] = uint8(_PS.face_list[j]);
         }
         return Solid(_PS.name, _vertices, _fl, _PS.face_polygon);
+    }
+
+    function getSolidName(
+        uint256 _solidNumber
+    ) internal view returns (string memory) {
+        return num2PackedSolid[_solidNumber].name;
     }
 }
