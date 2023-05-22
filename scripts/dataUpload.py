@@ -17,9 +17,9 @@ def deploy_and_create(mint_req=True):
         #     q = f.read()
         abi = json.load(bb)
 
-    # demo = Contract.from_abi(
-    #     "OnChain3dMetadataRenderer", "0x6Fd9f95566ebfbB254F64AE0F8D3b4eAd555cCed", abi
-    # )
+    demo = Contract.from_abi(
+        "OnChain3dMetadataRenderer", "0xb4F09f46D0160e220A58Ec908E600dCE254271c9", abi
+    )
     with open("./scripts/PlatonicSolids.json", "r") as ss:
         # PlatonicSolids.json
         #     q = f.read()

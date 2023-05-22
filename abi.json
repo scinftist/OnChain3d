@@ -24,25 +24,6 @@
         "type": "event"
     },
     {
-        "inputs": [
-            {
-                "internalType": "bytes",
-                "name": "colorlist",
-                "type": "bytes"
-            }
-        ],
-        "name": "color_listConverter",
-        "outputs": [
-            {
-                "internalType": "uint24[]",
-                "name": "",
-                "type": "uint24[]"
-            }
-        ],
-        "stateMutability": "pure",
-        "type": "function"
-    },
-    {
         "inputs": [],
         "name": "contractURI",
         "outputs": [
@@ -78,6 +59,21 @@
                         "type": "int128[3]"
                     },
                     {
+                        "internalType": "uint24",
+                        "name": "back_color",
+                        "type": "uint24"
+                    },
+                    {
+                        "internalType": "uint24",
+                        "name": "wire_color",
+                        "type": "uint24"
+                    },
+                    {
+                        "internalType": "uint16",
+                        "name": "angular_speed_deg",
+                        "type": "uint16"
+                    },
+                    {
                         "internalType": "uint8",
                         "name": "opacity",
                         "type": "uint8"
@@ -86,11 +82,6 @@
                         "internalType": "bool",
                         "name": "rotating_mode",
                         "type": "bool"
-                    },
-                    {
-                        "internalType": "uint16",
-                        "name": "angular_speed_deg",
-                        "type": "uint16"
                     },
                     {
                         "internalType": "bool",
@@ -103,22 +94,12 @@
                         "type": "bool"
                     },
                     {
-                        "internalType": "uint24",
-                        "name": "back_color",
-                        "type": "uint24"
-                    },
-                    {
-                        "internalType": "uint24",
-                        "name": "wire_color",
-                        "type": "uint24"
-                    },
-                    {
                         "internalType": "uint24[]",
                         "name": "color_list",
                         "type": "uint24[]"
                     }
                 ],
-                "internalType": "struct OnChain3dMetadataRenderer2.GeneralSetting",
+                "internalType": "struct TokenSettings.GeneralSetting",
                 "name": "",
                 "type": "tuple"
             }
@@ -144,13 +125,8 @@
             {
                 "components": [
                     {
-                        "internalType": "int128[3]",
-                        "name": "observer",
-                        "type": "int128[3]"
-                    },
-                    {
                         "internalType": "uint256",
-                        "name": "compressed",
+                        "name": "observer",
                         "type": "uint256"
                     },
                     {
@@ -159,7 +135,7 @@
                         "type": "bytes"
                     }
                 ],
-                "internalType": "struct OnChain3dMetadataRenderer2.MinimalSetting",
+                "internalType": "struct TokenSettings.MinimalSetting",
                 "name": "",
                 "type": "tuple"
             }
@@ -175,7 +151,7 @@
                 "type": "uint256"
             }
         ],
-        "name": "getSolid",
+        "name": "getUnPackedSolid",
         "outputs": [
             {
                 "components": [
@@ -200,7 +176,7 @@
                         "type": "uint8"
                     }
                 ],
-                "internalType": "struct OnChain3dMetadataRenderer2.solid",
+                "internalType": "struct SolidData.Solid",
                 "name": "",
                 "type": "tuple"
             }
@@ -361,14 +337,14 @@
                 "type": "string"
             },
             {
-                "internalType": "int128[3][]",
+                "internalType": "uint256[]",
                 "name": "_vertices",
-                "type": "int128[3][]"
+                "type": "uint256[]"
             },
             {
-                "internalType": "uint8[]",
+                "internalType": "bytes",
                 "name": "_face_list",
-                "type": "uint8[]"
+                "type": "bytes"
             },
             {
                 "internalType": "uint8",
