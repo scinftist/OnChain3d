@@ -50,8 +50,8 @@ def deploy_and_create(mint_req=True):
     token.mintToken(1, {"from": accounts[0], "value": 1e16})
     print(demo.getGeneralSetting(0))
     id = 0
-    o = [4 * 2 ** 64, 4 * 2 ** 64, 1 * 2 ** 64]
-    op = 29
+    o = [4 * 2 ** 64, 4 * 2 ** 64, -1 * 2 ** 64]
+    op = 23
 
     asd = 0
 

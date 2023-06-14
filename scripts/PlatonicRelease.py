@@ -38,13 +38,13 @@ def deploy_and_create(mint_req=True):
             y[str(i)]["face_polygon"],
             {"from": account},
         )
-        sleep(2)
+        sleep(0.5)
 
         # print(t)
 
     # token = OnChain3dTokenPlaceHolder.deploy({"from": account})
     token.setMetadataRenderer(demo.address, {"from": account})
-    sleep(1)
+    sleep(0.2)
     demo.setTargetAddress(token.address, {"from": account})
     test_counter += 1
     try:
@@ -72,8 +72,8 @@ def deploy_and_create(mint_req=True):
         pass_counter += 1
 
     id = 0
-    o = [2 ** 64, 4 * 2 ** 64, 12 * 2 ** 64]
-    op = 99
+    o = [2 ** 64, 4 * 2 ** 64, -3 * 2 ** 64]
+    op = 37
 
     asd = 7
 
@@ -82,7 +82,7 @@ def deploy_and_create(mint_req=True):
     cl2 = "F5B041F0E68C" * 10
     _comp = 7 + 256 * op + 2 ** 16 * asd + 2 ** 32 * wc + 2 ** 56 * 255
     print(demo.getGeneralSetting(0))
-    sleep(2)
+    sleep(0.2)
     test_counter += 1
     try:
         demo.setMinimalSetting(
@@ -103,7 +103,7 @@ def deploy_and_create(mint_req=True):
         pass_counter += 1
     test_counter += 1
     try:
-        pre = demo.preSetting(id, o, _comp, bytes.fromhex(cl2[0:24]))
+        pre = demo.previewTokenById(id, o, _comp, bytes.fromhex(cl2[0:24]))
         pass_counter += 1
         print("it passed previeew ")
         print(pre)
@@ -118,11 +118,11 @@ def deploy_and_create(mint_req=True):
     for i in range(5):
         print("token" + str(i))
         print(token.tokenURI(i))
-        sleep(2)
+        sleep(0.2)
 
     print(pass_counter, "/", test_counter)
 
-    sleep(2)
+    sleep(0.2)
 
     print("time remaining = " + str(token.remainingTime()))
     print("done")
