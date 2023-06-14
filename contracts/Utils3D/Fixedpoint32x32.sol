@@ -37,22 +37,13 @@ library Fixedpoint32x32 {
     function packVector(
         int128[3] memory _unPackedVector
     ) internal pure returns (uint256) {
-        // uint256 packedVector;
-        // unchecked {
-        //     packedVector = uint256(uint128(_unPackedVector[0] / 2 ** 32)) >> 32;
-        //     packedVector = packedVector << 64;
-        //     packedVector = uint256(uint128(_unPackedVector[1] / 2 ** 32)) >> 32;
-        //     packedVector = packedVector << 64;
-        //     packedVector = uint256(uint128(_unPackedVector[2] / 2 ** 32)) >> 32;
-        // }
-        // return packedVector;
         uint256 packedVector;
         unchecked {
-            packedVector = fixedpoint64x64to32x32(_unPackedVector[0]);
+            packedVector |= fixedpoint64x64to32x32(_unPackedVector[0]);
             packedVector = packedVector << 64;
-            packedVector = fixedpoint64x64to32x32(_unPackedVector[1]);
+            packedVector |= fixedpoint64x64to32x32(_unPackedVector[1]);
             packedVector = packedVector << 64;
-            packedVector = fixedpoint64x64to32x32(_unPackedVector[2]);
+            packedVector |= fixedpoint64x64to32x32(_unPackedVector[2]);
         }
         return packedVector;
     }
@@ -63,7 +54,7 @@ library Fixedpoint32x32 {
         uint256 _fixedpoint32x32Number;
         unchecked {
             _fixedpoint32x32Number =
-                uint256(uint128(_fixedpoint64x64Number / 2 ** 32)) >>
+                uint256(uint128(_fixedpoint64x64Number / 1)) >>
                 32;
         }
         return _fixedpoint32x32Number;

@@ -18,7 +18,7 @@ def deploy_and_create(mint_req=True):
         abi = json.load(bb)
 
     demo = Contract.from_abi(
-        "OnChain3dMetadataRenderer", "0xb4F09f46D0160e220A58Ec908E600dCE254271c9", abi
+        "OnChain3dMetadataRenderer", "0xc8B8df90F57D8F4AC7D52aD31bD6cbddf7067739", abi
     )
     with open("./scripts/PlatonicSolids.json", "r") as ss:
         # PlatonicSolids.json

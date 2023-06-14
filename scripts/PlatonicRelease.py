@@ -72,7 +72,7 @@ def deploy_and_create(mint_req=True):
         pass_counter += 1
 
     id = 0
-    o = [2 ** 64, 4 * 2 ** 64, 0]
+    o = [2 ** 64, 4 * 2 ** 64, 12 * 2 ** 64]
     op = 99
 
     asd = 7
@@ -101,7 +101,19 @@ def deploy_and_create(mint_req=True):
     except:
         print("it's passed! ")
         pass_counter += 1
+    test_counter += 1
+    try:
+        pre = demo.preSetting(id, o, _comp, bytes.fromhex(cl2[0:24]))
+        pass_counter += 1
+        print("it passed previeew ")
+        print(pre)
+    except Exception as e:
+        print(e)
+        print("it fucked ")
+    # pre = demo.previewTokenById(id, o, _comp, bytes.fromhex(cl2[0:24]))
 
+    # sleep(2)
+    # print(pre)
     print("token 3")
     for i in range(5):
         print("token" + str(i))
