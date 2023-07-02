@@ -152,17 +152,29 @@ abstract contract TokenSettings {
     function wire_colorConverter(
         uint256 compressd
     ) internal pure returns (uint24) {
+        uint24 _temp = 0;
+        uint24 _color = 0;
         unchecked {
-            return uint24((compressd >> 32) & 0xffffff);
+            _temp = uint24((compressd >> 32) & 0xfff);
         }
+        _color += (_temp & 0x00f) << 4;
+        _color += (_temp & 0x0f0) << 8;
+        _color += (_temp & 0xf00) << 12;
+        return _color;
     }
 
     function back_colorConverter(
         uint256 compressd
     ) internal pure returns (uint24) {
+        uint24 _temp = 0;
+        uint24 _color = 0;
         unchecked {
-            return uint24((compressd >> 56) & 0xffffff);
+            _temp = uint24((compressd >> 44) & 0xfff);
         }
+        _color += (_temp & 0x00f) << 4;
+        _color += (_temp & 0x0f0) << 8;
+        _color += (_temp & 0xf00) << 12;
+        return _color;
     }
 
     function color_listConverter(
