@@ -23,7 +23,7 @@ abstract contract TokenSettings {
     }
 
     uint256 private constant packedDefaultObserver =
-        0x00ff6699001f4505000000040000000000000004000000000000000100000000;
+        0x00000f69001f4505000000040000000000000004000000000000000100000000;
     // uint256 private constant defaultCompressed = 71888926379296005;
     bytes private constant defaultColorlist =
         hex"ffc300e74c3c3498db2ecc719b59b6f1c40f27ae602980b98e44adf39c12c0392b1abc9c34495e7f8c8d16a085d35400bdc3c72c3e50f0e68cf5b041";
@@ -169,7 +169,7 @@ abstract contract TokenSettings {
         uint24 _temp = 0;
         uint24 _color = 0;
         unchecked {
-            _temp = uint24((compressd >> 44) & 0xfff);
+            _temp = uint24((compressd >> 48) & 0xfff);
         }
         _color += (_temp & 0x00f) << 4;
         _color += (_temp & 0x0f0) << 8;
