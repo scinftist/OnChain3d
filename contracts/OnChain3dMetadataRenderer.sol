@@ -27,6 +27,8 @@ import "./TokenSettings.sol";
  * or change the polygon colors of their token, and someothere things.
  * for more info please visit https://OnChain3d.xyz
  */
+// Contract by SciNFTist.eth
+// Dapp     by Farzadex.eth
 
 contract OnChain3dMetadataRenderer is
     Ownable,
@@ -93,9 +95,9 @@ contract OnChain3dMetadataRenderer is
         targetContract = _targetAddress;
     }
 
-    function setContractURI(string memory _uri) public onlyOwner {
-        _contractURI = _uri;
-    }
+    // function setContractURI(string memory _uri) public onlyOwner {
+    //     _contractURI = _uri;
+    // }
 
     // see SolidData.sol
     function solidStruct_IMU(
@@ -139,6 +141,7 @@ contract OnChain3dMetadataRenderer is
         require(tempNorm > _minDistance, "too close");
         //see TokenSettings.sol
         TokenSettings.setMinimal(id, _observer, _compressed, _colorlist);
+        targetContract.emitUpdate(id);
     }
 
     // return the cross product of two vector
@@ -833,11 +836,11 @@ contract OnChain3dMetadataRenderer is
         return string(buffer);
     }
 
-    function contractURI() public view returns (string memory) {
-        return _contractURI;
-    }
+    // function contractURI() public view returns (string memory) {
+    //     return _contractURI;
+    // }
 
-    function initializeWithData(bytes memory) public pure {
-        revert("not callable");
-    }
+    // function initializeWithData(bytes memory) public pure {
+    //     revert("not callable");
+    // }
 }

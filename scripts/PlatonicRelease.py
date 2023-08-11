@@ -18,7 +18,7 @@ def deploy_and_create(mint_req=True):
     demo = OnChain3dMetadataRenderer.deploy({"from": account})
 
     token = OnChain3D.deploy({"from": account})
-    print("time remaining = " + str(token.remainingTime()))
+    # print("time remaining = " + str(token.remainingTime()))
     #############
     # with open("./solid-json.json", "r") as ss:
     with open("./scripts/PlatonicSolids.json", "r") as ss:
@@ -57,7 +57,7 @@ def deploy_and_create(mint_req=True):
 
     sleep(0.1)
     for i in range(5):
-        token.mintToken(1, {"from": accounts[i], "value": 1e16})
+        token.mintToken(1, {"from": accounts[i], "value": 2e15})
 
     for i in range(5):
 
@@ -123,8 +123,14 @@ def deploy_and_create(mint_req=True):
     print(pass_counter, "/", test_counter)
 
     sleep(0.2)
-
-    print("time remaining = " + str(token.remainingTime()))
+    print("this is the _render address  " + str(token.metadataRendererAddress()))
+    # metadataRendererAddress
+    # metadataRendererAdddress
+    print("balance")
+    print(account.balance())
+    token.withdraw({"from": account})
+    print("balance")
+    print(account.balance())
     print("done")
 
 
