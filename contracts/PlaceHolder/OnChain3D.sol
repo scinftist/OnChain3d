@@ -23,6 +23,14 @@ contract OnChain3D is ERC721Enumerable, Ownable, ReentrancyGuard {
         renderer = _renderer;
     }
 
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC721Enumerable) returns (bool) {
+        return
+            interfaceId == bytes4(0x49064906) ||
+            super.supportsInterface(interfaceId);
+    }
+
     function tokenURI(
         uint256 tokenId
     ) public view virtual override returns (string memory) {
