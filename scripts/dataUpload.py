@@ -18,15 +18,15 @@ def deploy_and_create(mint_req=True):
         abi = json.load(bb)
 
     demo = Contract.from_abi(
-        "OnChain3dMetadataRenderer", "0xA78633C18d7dD1e15A9C0161BD262411BA131B49", abi
+        "OnChain3dMetadataRenderer", "0xcfcaCB49f77a55334DA731fb0B7048df2f53f993", abi
     )
     with open("./scripts/PlatonicSolids.json", "r") as ss:
         # PlatonicSolids.json
         #     q = f.read()
         y = json.load(ss)
     print(2)
-    for k in range(4):
-        i = k + 1
+    for k in range(5):
+        i = k
 
         print(y[str(i)]["name"])
         demo.solidStruct_IMU(
